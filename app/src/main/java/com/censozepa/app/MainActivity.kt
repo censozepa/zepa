@@ -14,10 +14,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.censozepa.app.ui.navigation.CcaaListScreen
+import com.censozepa.app.ui.navigation.FavoritesScreen
+import com.censozepa.app.ui.navigation.MainMenuScreen
+import com.censozepa.app.ui.navigation.ObservationsScreen
+import com.censozepa.app.ui.navigation.SettingsScreen
 import com.censozepa.app.ui.navigation.SplashScreen
 import com.censozepa.app.ui.navigation.ZepaDetailScreen
 import com.censozepa.app.ui.navigation.ZepaListScreen
 import com.censozepa.app.ui.screens.CcaaListScreenContent
+import com.censozepa.app.ui.screens.FavoritesScreenContent
+import com.censozepa.app.ui.screens.MainMenuScreenContent
+import com.censozepa.app.ui.screens.ObservationsScreenContent
+import com.censozepa.app.ui.screens.SettingsScreenContent
 import com.censozepa.app.ui.screens.SplashScreenContent
 import com.censozepa.app.ui.screens.ZepaDetailScreenContent
 import com.censozepa.app.ui.screens.ZepaListScreenContent
@@ -48,14 +56,25 @@ fun CensoZepaApp() {
         composable<SplashScreen> {
             SplashScreenContent(
                 onTimeout = {
-                    navController.navigate(CcaaListScreen) {
+                    navController.navigate(MainMenuScreen) {
                         popUpTo<SplashScreen> { inclusive = true }
                     }
                 }
             )
         }
+
+        composable<MainMenuScreen> {
+            MainMenuScreenContent(
+                onSelectProvince = { navController.navigate(CcaaListScreen) },
+                onViewObservations = { navController.navigate(ObservationsScreen) },
+                onViewFavorites = { navController.navigate(FavoritesScreen) },
+                onOpenSettings = { navController.navigate(SettingsScreen) }
+            )
+        }
+
         composable<CcaaListScreen> {
             CcaaListScreenContent(
+                onBack = { navController.popBackStack() },
                 onCcaaClick = { ccaa ->
                     navController.navigate(ZepaListScreen(ccaa.id, ccaa.nombre))
                 }
@@ -78,6 +97,27 @@ fun CensoZepaApp() {
             val route = backStackEntry.toRoute<ZepaDetailScreen>()
             ZepaDetailScreenContent(
                 zepaId = route.zepaId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<ObservationsScreen> {
+            ObservationsScreenContent(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<FavoritesScreen> {
+            FavoritesScreenContent(
+                onBack = { navController.popBackStack() },
+                onZepaClick = { zepaId ->
+                    navController.navigate(ZepaDetailScreen(zepaId))
+                }
+            )
+        }
+
+        composable<SettingsScreen> {
+            SettingsScreenContent(
                 onBack = { navController.popBackStack() }
             )
         }

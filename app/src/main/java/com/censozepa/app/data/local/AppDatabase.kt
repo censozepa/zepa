@@ -12,9 +12,10 @@ import com.censozepa.app.data.local.entity.*
         EspecieEntity::class,
         FenologiaZepaEntity::class,
         SesionEntity::class,
-        AvistamientoEntity::class
+        AvistamientoEntity::class,
+        FavoriteEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -24,4 +25,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun fenologiaZepaDao(): FenologiaZepaDao
     abstract fun sesionDao(): SesionDao
     abstract fun avistamientoDao(): AvistamientoDao
+    abstract fun favoriteDao(): FavoriteDao
 }

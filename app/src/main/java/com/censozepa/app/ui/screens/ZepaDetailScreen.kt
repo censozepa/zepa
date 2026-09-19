@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Remove
@@ -20,10 +22,10 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.room.Room
-import com.censozepa.app.data.local.AppDatabase
+import com.censozepa.app.data.local.DatabaseProvider
 import com.censozepa.app.data.local.entity.AvistamientoEntity
 import com.censozepa.app.data.local.entity.EspecieEntity
+import com.censozepa.app.data.local.entity.FavoriteEntity
 import com.censozepa.app.data.local.entity.SesionEntity
 import com.censozepa.app.data.local.entity.ZepaEntity
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +46,7 @@ fun ZepaDetailScreenContent(
     val coroutineScope = rememberCoroutineScope()
     var zepa by remember { mutableStateOf<ZepaEntity?>(null) }
     var speciesList by remember { mutableStateOf<List<EspecieEntity>>(emptyList()) }
+    var isFavorite by remember { mutableStateOf(false) }
     
     // Active session state
     var activeSessionId by remember { mutableStateOf<Int?>(null) }
@@ -59,14 +62,13 @@ fun ZepaDetailScreenContent(
     var showHistory by remember { mutableStateOf(false) }
     var pastSessions by remember { mutableStateOf<List<SesionEntity>>(emptyList()) }
 
-    // Load ZEPA and Species
+    // Load ZEPA, Species, and Favorite status
     LaunchedEffect(zepaId) {
         withContext(Dispatchers.IO) {
-            val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db")
-                .createFromAsset("database/censozepa.db")
-                .build()
+            val db = DatabaseProvider.getDatabase(context)
             zepa = db.zepaDao().getById(zepaId)
             speciesList = db.especieDao().getAll().first()
+            isFavorite = db.favoriteDao().isFavorite(zepaId)
         }
     }
 
@@ -97,7 +99,25 @@ fun ZepaDetailScreenContent(
                 actions = {
                     IconButton(onClick = {
                         coroutineScope.launch(Dispatchers.IO) {
-                            val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db").build()
+                            val db = DatabaseProvider.getDatabase(context)
+                            if (isFavorite) {
+                                db.favoriteDao().removeFavorite(zepaId)
+                                withContext(Dispatchers.Main) { isFavorite = false }
+                            } else {
+                                db.favoriteDao().addFavorite(FavoriteEntity(zepaId))
+                                withContext(Dispatchers.Main) { isFavorite = true }
+                            }
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                            contentDescription = "Favorito",
+                            tint = if (isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                        )
+                    }
+                    IconButton(onClick = {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val db = DatabaseProvider.getDatabase(context)
                             pastSessions = db.sesionDao().getAll().first()
                             withContext(Dispatchers.Main) {
                                 showHistory = true
@@ -140,9 +160,7 @@ fun ZepaDetailScreenContent(
                     Button(
                         onClick = {
                             coroutineScope.launch(Dispatchers.IO) {
-                                val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db")
-                                    .createFromAsset("database/censozepa.db")
-                                    .build()
+                                val db = DatabaseProvider.getDatabase(context)
                                 val newSession = SesionEntity(
                                     id_zepa = zepaId,
                                     fecha_hora_inicio = System.currentTimeMillis(),
@@ -185,9 +203,7 @@ fun ZepaDetailScreenContent(
                                     val sessionId = activeSessionId
                                     if (sessionId != null) {
                                         coroutineScope.launch(Dispatchers.IO) {
-                                            val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db")
-                                                .createFromAsset("database/censozepa.db")
-                                                .build()
+                                            val db = DatabaseProvider.getDatabase(context)
                                             val sessions = db.sesionDao().getAll().first()
                                             val currentSession = sessions.find { it.id == sessionId }
                                             if (currentSession != null) {
@@ -287,9 +303,7 @@ fun ZepaDetailScreenContent(
                                             val sp = selectedSpecies
                                             if (sesId != null && sp != null) {
                                                 coroutineScope.launch(Dispatchers.IO) {
-                                                    val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db")
-                                                        .createFromAsset("database/censozepa.db")
-                                                        .build()
+                                                    val db = DatabaseProvider.getDatabase(context)
                                                     val avistamiento = AvistamientoEntity(
                                                         id_sesion = sesId,
                                                         id_especie = sp.codigo_n2000,

@@ -25,11 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.room.Room
-import com.censozepa.app.data.local.AppDatabase
+import com.censozepa.app.data.local.DatabaseProvider
 import com.censozepa.app.data.local.entity.ZepaEntity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,9 +43,7 @@ fun ZepaListScreenContent(
 
     LaunchedEffect(ccaaId) {
         withContext(Dispatchers.IO) {
-            val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db")
-                .createFromAsset("database/censozepa.db")
-                .build()
+            val db = DatabaseProvider.getDatabase(context)
             zepaList = db.zepaDao().getByCcaa(ccaaId)
         }
     }

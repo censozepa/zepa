@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -21,31 +25,37 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.room.Room
-import com.censozepa.app.data.local.AppDatabase
+import com.censozepa.app.data.local.DatabaseProvider
 import com.censozepa.app.data.local.entity.CcaaEntity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CcaaListScreenContent(onCcaaClick: (CcaaEntity) -> Unit) {
+fun CcaaListScreenContent(
+    onBack: () -> Unit,
+    onCcaaClick: (CcaaEntity) -> Unit
+) {
     val context = LocalContext.current
     var ccaaList by remember { mutableStateOf<List<CcaaEntity>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            val db = Room.databaseBuilder(context, AppDatabase::class.java, "censozepa.db")
-                .createFromAsset("database/censozepa.db")
-                .build()
+            val db = DatabaseProvider.getDatabase(context)
             ccaaList = db.ccaaDao().getAll()
         }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Comunidades Autónomas") })
+            TopAppBar(
+                title = { Text("Comunidades Autónomas") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
+                }
+            )
         }
     ) { paddingValues ->
         LazyColumn(
