@@ -1,16 +1,18 @@
 plugins {
   alias(libs.plugins.android.application)
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
+  id("kotlin-kapt")
 }
 
 android {
-    namespace = "com.example.helloworld"
-    compileSdk = 36
+    namespace = "com.censozepa.app"
+    compileSdk = 37
     defaultConfig {
-        applicationId = "com.example.helloworld"
+        applicationId = "com.censozepa.app"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
     }
@@ -78,7 +80,20 @@ dependencies {
   androidTestImplementation(libs.androidx.test.espresso.core)
 
   // Navigation
-  implementation(libs.androidx.navigation3.ui)
-  implementation(libs.androidx.navigation3.runtime)
-  implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+  implementation(libs.androidx.navigation.compose)
+  implementation(libs.kotlinx.serialization.json)
+
+  // Room
+  implementation(libs.androidx.room.runtime)
+  implementation(libs.androidx.room.ktx)
+  kapt(libs.androidx.room.compiler)
+
+  // OSMDroid
+  implementation(libs.osmdroid.android)
+
+  // Material Icons
+  implementation(libs.androidx.compose.material.icons.extended)
+
+  // Coil for image loading
+  implementation("io.coil-kt:coil-compose:2.7.0")
 }

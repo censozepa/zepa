@@ -1,6 +1,6 @@
-package com.example.helloworld.ui.main
+package com.censozepa.app.ui.main
 
-import com.example.helloworld.data.DataRepository
+import com.censozepa.app.data.DataRepository
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

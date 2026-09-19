@@ -1,4 +1,4 @@
-package com.example.helloworld.theme
+package com.censozepa.app.theme
 
 import androidx.compose.ui.graphics.Color
 

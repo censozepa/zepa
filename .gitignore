@@ -2,6 +2,8 @@
 .gradle
 .idea
 /local.properties
+*.zip
+*.accdb
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -14,3 +16,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+*.zip
+*.accdb

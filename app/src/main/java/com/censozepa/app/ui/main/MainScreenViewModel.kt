@@ -1,9 +1,9 @@
-package com.example.helloworld.ui.main
+package com.censozepa.app.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.helloworld.data.DataRepository
-import com.example.helloworld.ui.main.MainScreenUiState.Success
+import com.censozepa.app.data.DataRepository
+import com.censozepa.app.ui.main.MainScreenUiState.Success
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
