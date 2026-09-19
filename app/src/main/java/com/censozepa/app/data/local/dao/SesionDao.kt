@@ -1,6 +1,7 @@
 package com.censozepa.app.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
@@ -17,4 +18,10 @@ interface SesionDao {
 
     @Update
     suspend fun update(sesion: SesionEntity)
+
+    @Delete
+    suspend fun delete(sesion: SesionEntity)
+
+    @Query("DELETE FROM sesion WHERE id = :sessionId")
+    suspend fun deleteById(sessionId: Int)
 }

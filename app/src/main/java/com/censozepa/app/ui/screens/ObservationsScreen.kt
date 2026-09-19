@@ -4,7 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import com.censozepa.app.data.local.entity.EspecieEntity
 import com.censozepa.app.data.local.entity.SesionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
 
@@ -28,13 +30,17 @@ import java.util.Date
 @Composable
 fun ObservationsScreenContent(onBack: () -> Unit) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var sessions by remember { mutableStateOf<List<SesionEntity>>(emptyList()) }
     var sightingsMap by remember { mutableStateOf<Map<Int, List<AvistamientoEntity>>>(emptyMap()) }
     var speciesList by remember { mutableStateOf<List<EspecieEntity>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
+    // Confirmation dialog state
+    var sessionToDelete by remember { mutableStateOf<SesionEntity?>(null) }
+
+    fun loadData() {
+        coroutineScope.launch(Dispatchers.IO) {
             val db = DatabaseProvider.getDatabase(context)
             val loadedSessions = db.sesionDao().getAll().first()
             val loadedSpecies = db.especieDao().getAll().first()
@@ -51,13 +57,17 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
         }
     }
 
+    LaunchedEffect(Unit) {
+        loadData()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Mis Observaciones y Muestreos") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             )
@@ -86,13 +96,26 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Jornada #${session.id} (ZEPA: ${session.id_zepa})", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("Inicio: ${Date(session.fecha_hora_inicio)}", fontSize = 12.sp, color = Color.Gray)
-                            if (session.fecha_hora_fin != null) {
-                                Text("Fin: ${Date(session.fecha_hora_fin)}", fontSize = 12.sp, color = Color.Gray)
-                            } else {
-                                Text("Estado: En curso", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Jornada #${session.id} (ZEPA: ${session.id_zepa})", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Inicio: ${Date(session.fecha_hora_inicio)}", fontSize = 12.sp, color = Color.Gray)
+                                    if (session.fecha_hora_fin != null) {
+                                        Text("Fin: ${Date(session.fecha_hora_fin)}", fontSize = 12.sp, color = Color.Gray)
+                                    } else {
+                                        Text("Estado: En curso", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                IconButton(onClick = {
+                                    sessionToDelete = session
+                                }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Borrar registro", tint = MaterialTheme.colorScheme.error)
+                                }
                             }
                             
                             Spacer(modifier = Modifier.height(8.dp))
@@ -111,5 +134,38 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    // Delete Confirmation Dialog
+    if (sessionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { sessionToDelete = null },
+            title = { Text("¿Eliminar observación?") },
+            text = { Text("¿Estás seguro de que deseas eliminar la Jornada #${sessionToDelete!!.id} y todos sus avistamientos asociados? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val sToDelete = sessionToDelete
+                        sessionToDelete = null
+                        if (sToDelete != null) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val db = DatabaseProvider.getDatabase(context)
+                                db.avistamientoDao().deleteBySesion(sToDelete.id)
+                                db.sesionDao().deleteById(sToDelete.id)
+                                loadData()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { sessionToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }

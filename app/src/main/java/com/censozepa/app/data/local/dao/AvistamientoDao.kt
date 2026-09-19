@@ -17,4 +17,7 @@ interface AvistamientoDao {
 
     @Delete
     suspend fun delete(avistamiento: AvistamientoEntity)
+
+    @Query("DELETE FROM avistamiento WHERE id_sesion = :idSesion")
+    suspend fun deleteBySesion(idSesion: Int)
 }
