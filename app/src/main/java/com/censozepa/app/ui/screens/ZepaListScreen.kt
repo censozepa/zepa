@@ -78,7 +78,7 @@ fun ZepaListScreenContent(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Text(
-                        text = zepa.nombre,
+                        text = "${zepa.id_codigo} - ${zepa.nombre}",
                         modifier = Modifier.padding(16.dp)
                     )
                 }
