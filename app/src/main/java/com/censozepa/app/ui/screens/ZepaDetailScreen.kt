@@ -5,18 +5,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -58,8 +59,9 @@ fun ZepaDetailScreenContent(
     var quantity by remember { mutableStateOf(1) }
     var sessionSightings by remember { mutableStateOf<List<AvistamientoEntity>>(emptyList()) }
     
-    // History dialog state
+    // Dialog states
     var showHistory by remember { mutableStateOf(false) }
+    var showSightingsDialog by remember { mutableStateOf(false) }
     var pastSessions by remember { mutableStateOf<List<SesionEntity>>(emptyList()) }
 
     // Load ZEPA, Species for this specific ZEPA, and Favorite status
@@ -93,10 +95,11 @@ fun ZepaDetailScreenContent(
                 title = { Text(zepa?.nombre ?: "Censo ZEPA") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 },
                 actions = {
+                    // Favorite button
                     IconButton(onClick = {
                         coroutineScope.launch(Dispatchers.IO) {
                             val db = DatabaseProvider.getDatabase(context)
@@ -115,16 +118,44 @@ fun ZepaDetailScreenContent(
                             tint = if (isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
                         )
                     }
+                    
+                    // Top-right button: Avistamientos en esta jornada (replaces history) with strong forest green badge
                     IconButton(onClick = {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val db = DatabaseProvider.getDatabase(context)
-                            pastSessions = db.sesionDao().getAll().first()
-                            withContext(Dispatchers.Main) {
-                                showHistory = true
+                        val sesId = activeSessionId
+                        if (sesId != null) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val db = DatabaseProvider.getDatabase(context)
+                                val sightings = db.avistamientoDao().getBySesion(sesId).first()
+                                withContext(Dispatchers.Main) {
+                                    sessionSightings = sightings
+                                    showSightingsDialog = true
+                                }
+                            }
+                        } else {
+                            // If no active session, show history of past sessions
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val db = DatabaseProvider.getDatabase(context)
+                                pastSessions = db.sesionDao().getAll().first()
+                                withContext(Dispatchers.Main) {
+                                    showHistory = true
+                                }
                             }
                         }
                     }) {
-                        Icon(Icons.Filled.History, contentDescription = "Historial")
+                        BadgedBox(
+                            badge = {
+                                if (activeSessionId != null && sessionSightings.isNotEmpty()) {
+                                    Badge(
+                                        containerColor = Color(0xFF2E7D32), // Strong forest green
+                                        contentColor = Color.White
+                                    ) {
+                                        Text("${sessionSightings.size}")
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.List, contentDescription = "Avistamientos de la jornada")
+                        }
                     }
                 }
             )
@@ -141,7 +172,7 @@ fun ZepaDetailScreenContent(
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // ZEPA Info Header (Clean & concise per user request)
+                // Block 1: ZEPA Info Header (Clean & concise)
                 val art4Count = speciesList.count { it.categoria == "Art. 4" }
                 val rel33Count = speciesList.count { it.categoria != "Art. 4" }
 
@@ -187,7 +218,7 @@ fun ZepaDetailScreenContent(
                         Text("🚀 Empezar Conteo (Iniciar Jornada)", fontSize = 16.sp)
                     }
                 } else {
-                    // Active Session Controls
+                    // Block 2: Active Session Controls (Start/Stop counter)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -231,7 +262,7 @@ fun ZepaDetailScreenContent(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Species Search Bar
+                    // Block 3: Species Search Bar
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -242,7 +273,7 @@ fun ZepaDetailScreenContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Filtered Species List
+                    // Block 4: Species List
                     val filteredSpecies = speciesList.filter {
                         (it.nombre_comun?.contains(searchQuery, ignoreCase = true) == true) ||
                         (it.nombre_cientifico.contains(searchQuery, ignoreCase = true)) ||
@@ -252,7 +283,7 @@ fun ZepaDetailScreenContent(
                     if (selectedSpecies == null) {
                         LazyColumn(
                             modifier = Modifier
-                                .height(180.dp)
+                                .weight(1f)
                                 .fillMaxWidth()
                         ) {
                             items(filteredSpecies) { especie ->
@@ -375,44 +406,66 @@ fun ZepaDetailScreenContent(
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text("Avistamientos en esta jornada (${sessionSightings.size}):", fontWeight = FontWeight.Bold)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        items(sessionSightings) { av ->
-                            val esp = speciesList.find { it.codigo_n2000 == av.id_especie }
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        val displayCommon = esp?.nombre_comun ?: esp?.nombre_cientifico ?: av.id_especie
-                                        Text(displayCommon, fontWeight = FontWeight.Bold)
-                                        Text("Cantidad: ${av.cantidad}", fontSize = 14.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
     }
 
-    // History Dialog
+    // Sightings Detail Dialog with Back Arrow
+    if (showSightingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSightingsDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { showSightingsDialog = false }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Avistamientos (${sessionSightings.size})")
+                }
+            },
+            text = {
+                LazyColumn(
+                    modifier = Modifier
+                        .height(350.dp)
+                        .fillMaxWidth()
+                ) {
+                    items(sessionSightings) { av ->
+                        val esp = speciesList.find { it.codigo_n2000 == av.id_especie }
+                        val displayCommon = esp?.nombre_comun ?: esp?.nombre_cientifico ?: av.id_especie
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(displayCommon, fontWeight = FontWeight.Bold)
+                                    if (esp?.nombre_comun != null) {
+                                        Text(esp.nombre_cientifico, fontSize = 12.sp, fontStyle = FontStyle.Italic)
+                                    }
+                                    Text("Cantidad: ${av.cantidad}", fontSize = 14.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSightingsDialog = false }) {
+                    Text("Volver")
+                }
+            }
+        )
+    }
+
+    // History Dialog (if no active session)
     if (showHistory) {
         AlertDialog(
             onDismissRequest = { showHistory = false },
