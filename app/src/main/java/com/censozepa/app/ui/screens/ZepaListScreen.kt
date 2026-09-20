@@ -36,10 +36,11 @@ fun ZepaListScreenContent(
         }
     }
 
+    val normalizedQuery = searchQuery.normalizeAccents()
     val filteredZepas = zepaList.filter {
-        it.nombre.contains(searchQuery, ignoreCase = true) ||
-        it.id_codigo.contains(searchQuery, ignoreCase = true) ||
-        (it.provincia?.contains(searchQuery, ignoreCase = true) == true)
+        it.nombre.normalizeAccents().contains(normalizedQuery, ignoreCase = true) ||
+        it.id_codigo.normalizeAccents().contains(normalizedQuery, ignoreCase = true) ||
+        (it.provincia?.normalizeAccents()?.contains(normalizedQuery, ignoreCase = true) == true)
     }
 
     Scaffold(
