@@ -1,27 +1,14 @@
 package com.censozepa.app.ui.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -40,6 +27,7 @@ fun ZepaListScreenContent(
 ) {
     val context = LocalContext.current
     var zepaList by remember { mutableStateOf<List<ZepaEntity>>(emptyList()) }
+    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(ccaaId) {
         withContext(Dispatchers.IO) {
@@ -48,35 +36,59 @@ fun ZepaListScreenContent(
         }
     }
 
+    val filteredZepas = zepaList.filter {
+        it.nombre.contains(searchQuery, ignoreCase = true) ||
+        it.id_codigo.contains(searchQuery, ignoreCase = true) ||
+        (it.provincia?.contains(searchQuery, ignoreCase = true) == true)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("ZEPAs: $ccaaName") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(16.dp)
         ) {
-            items(zepaList) { zepa ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .clickable { onZepaClick(zepa) },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Text(
-                        text = "${zepa.id_codigo} - ${zepa.nombre}",
-                        modifier = Modifier.padding(16.dp)
-                    )
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Buscar ZEPA por nombre o código...") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filteredZepas) { zepa ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onZepaClick(zepa) },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = "${zepa.id_codigo} - ${zepa.nombre}",
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
             }
         }
