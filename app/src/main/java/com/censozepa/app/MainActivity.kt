@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,13 +38,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val initialZepaId = intent?.getStringExtra("NAVIGATE_TO_ZEPA_ID")
         setContent {
             CensoZEPATheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    CensoZepaApp()
+                    CensoZepaApp(initialZepaId)
                 }
             }
         }
@@ -51,8 +53,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CensoZepaApp() {
+fun CensoZepaApp(initialZepaId: String? = null) {
     val navController = rememberNavController()
+
+    LaunchedEffect(initialZepaId) {
+        if (!initialZepaId.isNullOrBlank()) {
+            navController.navigate(MainMenuScreen) {
+                popUpTo(0)
+            }
+            navController.navigate(ZepaDetailScreen(initialZepaId))
+        }
+    }
 
     NavHost(navController = navController, startDestination = SplashScreen) {
         composable<SplashScreen> {

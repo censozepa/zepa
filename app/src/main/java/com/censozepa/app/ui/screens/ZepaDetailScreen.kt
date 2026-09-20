@@ -1,5 +1,12 @@
 package com.censozepa.app.ui.screens
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,12 +37,42 @@ import com.censozepa.app.data.local.entity.EspecieEntity
 import com.censozepa.app.data.local.entity.FavoriteEntity
 import com.censozepa.app.data.local.entity.SesionEntity
 import com.censozepa.app.data.local.entity.ZepaEntity
+import com.censozepa.app.service.ZepaCensoService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
+
+fun startCensusSession(context: Context, zepaId: String, zepaName: String?, onStarted: (Int) -> Unit) {
+    CoroutineScope(Dispatchers.IO).launch {
+        val db = DatabaseProvider.getDatabase(context)
+        val newSession = SesionEntity(
+            id_zepa = zepaId,
+            fecha_hora_inicio = System.currentTimeMillis(),
+            fecha_hora_fin = null,
+            distancia_recorrida = 0.0,
+            track_gps_json = null
+        )
+        val id = db.sesionDao().insert(newSession).toInt()
+        
+        val intent = Intent(context, ZepaCensoService::class.java).apply {
+            putExtra("ZEPA_ID", zepaId)
+            putExtra("ZEPA_NAME", zepaName ?: zepaId)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+
+        withContext(Dispatchers.Main) {
+            onStarted(id)
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +99,17 @@ fun ZepaDetailScreenContent(
     
     // Dialog states
     var showSightingsDialog by remember { mutableStateOf(false) }
+
+    // Notification permission launcher for Android 13+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        startCensusSession(context, zepaId, zepa?.nombre) { sessionId ->
+            activeSessionId = sessionId
+            sessionTimeSeconds = 0L
+            sessionSightings = emptyList()
+        }
+    }
 
     // Load ZEPA, Species for this specific ZEPA, and Favorite status
     LaunchedEffect(zepaId) {
@@ -192,18 +240,13 @@ fun ZepaDetailScreenContent(
                     // Start Session Button
                     Button(
                         onClick = {
-                            coroutineScope.launch(Dispatchers.IO) {
-                                val db = DatabaseProvider.getDatabase(context)
-                                val newSession = SesionEntity(
-                                    id_zepa = zepaId,
-                                    fecha_hora_inicio = System.currentTimeMillis(),
-                                    fecha_hora_fin = null,
-                                    distancia_recorrida = 0.0,
-                                    track_gps_json = null
-                                )
-                                val id = db.sesionDao().insert(newSession).toInt()
-                                withContext(Dispatchers.Main) {
-                                    activeSessionId = id
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                startCensusSession(context, zepaId, zepa?.nombre) { sessionId ->
+                                    activeSessionId = sessionId
                                     sessionTimeSeconds = 0L
                                     sessionSightings = emptyList()
                                 }
@@ -242,6 +285,13 @@ fun ZepaDetailScreenContent(
                                             if (currentSession != null) {
                                                 db.sesionDao().update(currentSession.copy(fecha_hora_fin = System.currentTimeMillis()))
                                             }
+                                            
+                                            // Stop foreground service
+                                            val intent = Intent(context, ZepaCensoService::class.java).apply {
+                                                action = "STOP_SERVICE"
+                                            }
+                                            context.startService(intent)
+
                                             withContext(Dispatchers.Main) {
                                                 activeSessionId = null
                                             }
