@@ -100,7 +100,12 @@ fun CensoZepaApp() {
             val route = backStackEntry.toRoute<ZepaDetailScreen>()
             ZepaDetailScreenContent(
                 zepaId = route.zepaId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onHomeClick = {
+                    navController.navigate(MainMenuScreen) {
+                        popUpTo<MainMenuScreen> { inclusive = false }
+                    }
+                }
             )
         }
 

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Stop
@@ -34,14 +35,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZepaDetailScreenContent(
     zepaId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHomeClick: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -60,9 +61,7 @@ fun ZepaDetailScreenContent(
     var sessionSightings by remember { mutableStateOf<List<AvistamientoEntity>>(emptyList()) }
     
     // Dialog states
-    var showHistory by remember { mutableStateOf(false) }
     var showSightingsDialog by remember { mutableStateOf(false) }
-    var pastSessions by remember { mutableStateOf<List<SesionEntity>>(emptyList()) }
 
     // Load ZEPA, Species for this specific ZEPA, and Favorite status
     LaunchedEffect(zepaId) {
@@ -99,6 +98,13 @@ fun ZepaDetailScreenContent(
                     }
                 },
                 actions = {
+                    // Home button (visible only when session is NOT active)
+                    if (activeSessionId == null) {
+                        IconButton(onClick = onHomeClick) {
+                            Icon(Icons.Filled.Home, contentDescription = "Menú principal")
+                        }
+                    }
+
                     // Favorite button
                     IconButton(onClick = {
                         coroutineScope.launch(Dispatchers.IO) {
@@ -119,7 +125,7 @@ fun ZepaDetailScreenContent(
                         )
                     }
                     
-                    // Top-right button: Avistamientos en esta jornada (replaces history) with strong forest green badge
+                    // Top-right button: Avistamientos en esta jornada with strong forest green badge
                     IconButton(onClick = {
                         val sesId = activeSessionId
                         if (sesId != null) {
@@ -129,15 +135,6 @@ fun ZepaDetailScreenContent(
                                 withContext(Dispatchers.Main) {
                                     sessionSightings = sightings
                                     showSightingsDialog = true
-                                }
-                            }
-                        } else {
-                            // If no active session, show history of past sessions
-                            coroutineScope.launch(Dispatchers.IO) {
-                                val db = DatabaseProvider.getDatabase(context)
-                                pastSessions = db.sesionDao().getAll().first()
-                                withContext(Dispatchers.Main) {
-                                    showHistory = true
                                 }
                             }
                         }
@@ -275,9 +272,9 @@ fun ZepaDetailScreenContent(
 
                     // Block 4: Species List
                     val filteredSpecies = speciesList.filter {
-                        (it.nombre_comun?.contains(searchQuery, ignoreCase = true) == true) ||
-                        (it.nombre_cientifico.contains(searchQuery, ignoreCase = true)) ||
-                        (it.codigo_n2000.contains(searchQuery, ignoreCase = true))
+                        (it.nombre_comun?.normalizeAccents()?.contains(searchQuery.normalizeAccents(), ignoreCase = true) == true) ||
+                        (it.nombre_cientifico.normalizeAccents().contains(searchQuery.normalizeAccents(), ignoreCase = true)) ||
+                        (it.codigo_n2000.normalizeAccents().contains(searchQuery.normalizeAccents(), ignoreCase = true))
                     }
 
                     if (selectedSpecies == null) {
@@ -460,35 +457,6 @@ fun ZepaDetailScreenContent(
             confirmButton = {
                 TextButton(onClick = { showSightingsDialog = false }) {
                     Text("Volver")
-                }
-            }
-        )
-    }
-
-    // History Dialog (if no active session)
-    if (showHistory) {
-        AlertDialog(
-            onDismissRequest = { showHistory = false },
-            title = { Text("Historial de Muestreos") },
-            text = {
-                LazyColumn(modifier = Modifier.height(300.dp)) {
-                    items(pastSessions) { sesion ->
-                        Column(modifier = Modifier.padding(8.dp)) {
-                            Text("Sesión #${sesion.id} - ZEPA: ${sesion.id_zepa}", fontWeight = FontWeight.Bold)
-                            Text("Inicio: ${Date(sesion.fecha_hora_inicio)}")
-                            if (sesion.fecha_hora_fin != null) {
-                                Text("Fin: ${Date(sesion.fecha_hora_fin)}")
-                            } else {
-                                Text("Estado: En curso")
-                            }
-                            HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showHistory = false }) {
-                    Text("Cerrar")
                 }
             }
         )
