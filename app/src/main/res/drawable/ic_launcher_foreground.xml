@@ -5,32 +5,14 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Outer shield / circular emblem background -->
-    <path
-        android:fillColor="#2E7D32"
-        android:pathData="M54,14 C78,14 94,30 94,54 C94,78 78,94 54,94 C30,94 14,78 14,54 C14,30 30,14 54,14 Z" />
-
-    <!-- Inner lighter green ring -->
-    <path
-        android:fillColor="#43A047"
-        android:pathData="M54,18 C76,18 90,32 90,54 C90,76 76,90 54,90 C32,90 18,76 18,54 C18,32 32,18 54,18 Z" />
-
-    <!-- Majestic bird / eagle silhouette -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,26 C64,26 74,32 84,24 C76,36 66,42 54,46 C42,42 32,36 24,24 C34,32 44,26 54,26 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,46 C54,46 51,55 56,61 C58,63 56,64 54,62 C52,60 49,54 48,46 Z" />
-
-    <!-- Text ZEPA in bold white vector paths at bottom -->
+    <!-- Centered bold text Z E P A -->
     <!-- Z -->
-    <path android:fillColor="#FFFFFF" android:pathData="M21,64 H33 V67 L25,75 H33 V78 H21 V75 L29,67 H21 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M22,46 H37 V51 L27,63 H37 V68 H22 V63 L32,51 H22 Z" />
     <!-- E -->
-    <path android:fillColor="#FFFFFF" android:pathData="M37,64 H47 V67 H40 V69 H45 V72 H40 V75 H47 V78 H37 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M41,46 H54 V51 H46 V54 H52 V58 H46 V61 H54 V66 H41 Z" />
     <!-- P -->
-    <path android:fillColor="#FFFFFF" android:pathData="M51,64 H60 C64,64 64,71 60,71 H54 V78 H51 Z M54,67 V68 H59 C61,68 61,67 59,67 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M58,46 H70 C75,46 75,56 70,56 H63 V66 H58 Z M63,51 V53 H68 C70,53 70,51 68,51 Z" />
     <!-- A -->
-    <path android:fillColor="#FFFFFF" android:pathData="M65,78 L69,64 H72 L76,78 H73 L72,74 H69 L68,78 Z M69.5,71 H71.5 L70.5,67 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M75,66 L78.5,46 H82 L85.5,66 H82.5 L81.5,61 H79 L78,66 Z M79.8,57 H80.7 L80.2,52 Z" />
 
 </vector>

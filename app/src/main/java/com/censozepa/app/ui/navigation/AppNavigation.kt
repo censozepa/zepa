@@ -3,9 +3,6 @@ package com.censozepa.app.ui.navigation
 import kotlinx.serialization.Serializable
 
 @Serializable
-object SplashScreen
-
-@Serializable
 object MainMenuScreen
 
 @Serializable

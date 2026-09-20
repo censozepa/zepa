@@ -20,7 +20,6 @@ import com.censozepa.app.ui.navigation.FavoritesScreen
 import com.censozepa.app.ui.navigation.MainMenuScreen
 import com.censozepa.app.ui.navigation.ObservationsScreen
 import com.censozepa.app.ui.navigation.SettingsScreen
-import com.censozepa.app.ui.navigation.SplashScreen
 import com.censozepa.app.ui.navigation.ZepaDetailScreen
 import com.censozepa.app.ui.navigation.ZepaListScreen
 import com.censozepa.app.ui.screens.BirdListScreenContent
@@ -29,7 +28,6 @@ import com.censozepa.app.ui.screens.FavoritesScreenContent
 import com.censozepa.app.ui.screens.MainMenuScreenContent
 import com.censozepa.app.ui.screens.ObservationsScreenContent
 import com.censozepa.app.ui.screens.SettingsScreenContent
-import com.censozepa.app.ui.screens.SplashScreenContent
 import com.censozepa.app.ui.screens.ZepaDetailScreenContent
 import com.censozepa.app.ui.screens.ZepaListScreenContent
 import com.censozepa.app.ui.theme.CensoZEPATheme
@@ -65,17 +63,7 @@ fun CensoZepaApp(initialZepaId: String? = null) {
         }
     }
 
-    NavHost(navController = navController, startDestination = SplashScreen) {
-        composable<SplashScreen> {
-            SplashScreenContent(
-                onTimeout = {
-                    navController.navigate(MainMenuScreen) {
-                        popUpTo<SplashScreen> { inclusive = true }
-                    }
-                }
-            )
-        }
-
+    NavHost(navController = navController, startDestination = MainMenuScreen) {
         composable<MainMenuScreen> {
             MainMenuScreenContent(
                 onSelectProvince = { navController.navigate(CcaaListScreen) },
