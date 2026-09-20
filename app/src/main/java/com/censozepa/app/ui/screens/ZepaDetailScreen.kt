@@ -141,16 +141,20 @@ fun ZepaDetailScreenContent(
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // ZEPA Info Header
+                // ZEPA Info Header (Clean & concise per user request)
+                val art4Count = speciesList.count { it.categoria == "Art. 4" }
+                val rel33Count = speciesList.count { it.categoria != "Art. 4" }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Código: ${zepa!!.id_codigo}", fontWeight = FontWeight.Bold)
-                        Text("Provincia: ${zepa!!.provincia ?: "N/D"}")
-                        Text("Superficie: ${zepa!!.superficie ?: 0.0} ha")
-                        Text("Especies catalogadas en esta ZEPA: ${speciesList.size}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        Text("Código ZEPA: ${zepa!!.id_codigo}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Total especies catalogadas: ${speciesList.size}", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                        Text("• Especies Art. 4 Directiva Aves: $art4Count", fontSize = 14.sp)
+                        Text("• Otras especies relevantes (3.3): $rel33Count", fontSize = 14.sp)
                     }
                 }
 
@@ -231,7 +235,7 @@ fun ZepaDetailScreenContent(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        label = { Text("Buscar entre ${speciesList.size} especies de esta ZEPA...") },
+                        label = { Text("Buscar entre ${speciesList.size} especies...") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -252,9 +256,29 @@ fun ZepaDetailScreenContent(
                                 .fillMaxWidth()
                         ) {
                             items(filteredSpecies) { especie ->
+                                val common = especie.nombre_comun
                                 ListItem(
-                                    headlineContent = { Text(especie.nombre_comun ?: especie.codigo_n2000, fontWeight = FontWeight.Bold) },
-                                    supportingContent = { Text("${especie.nombre_cientifico} (${especie.categoria})") },
+                                    headlineContent = {
+                                        Text(
+                                            text = common ?: especie.nombre_cientifico,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp
+                                        )
+                                    },
+                                    supportingContent = {
+                                        if (common != null) {
+                                            Text(
+                                                text = "${especie.nombre_cientifico} · ${especie.categoria ?: "N/D"}",
+                                                fontSize = 12.sp,
+                                                fontStyle = FontStyle.Italic
+                                            )
+                                        } else {
+                                            Text(
+                                                text = especie.categoria ?: "N/D",
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { selectedSpecies = especie }
@@ -268,8 +292,24 @@ fun ZepaDetailScreenContent(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text("Especie seleccionada:", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
-                                Text(selectedSpecies!!.nombre_comun ?: selectedSpecies!!.codigo_n2000, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                Text("${selectedSpecies!!.nombre_cientifico} · ${selectedSpecies!!.categoria}", fontSize = 12.sp, fontStyle = FontStyle.Italic)
+                                val selCommon = selectedSpecies!!.nombre_comun
+                                Text(
+                                    text = selCommon ?: selectedSpecies!!.nombre_cientifico,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                                if (selCommon != null) {
+                                    Text(
+                                        text = "${selectedSpecies!!.nombre_cientifico} · ${selectedSpecies!!.categoria ?: "N/D"}",
+                                        fontSize = 12.sp,
+                                        fontStyle = FontStyle.Italic
+                                    )
+                                } else {
+                                    Text(
+                                        text = selectedSpecies!!.categoria ?: "N/D",
+                                        fontSize = 12.sp
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -359,7 +399,8 @@ fun ZepaDetailScreenContent(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text(esp?.nombre_comun ?: av.id_especie, fontWeight = FontWeight.Bold)
+                                        val displayCommon = esp?.nombre_comun ?: esp?.nombre_cientifico ?: av.id_especie
+                                        Text(displayCommon, fontWeight = FontWeight.Bold)
                                         Text("Cantidad: ${av.cantidad}", fontSize = 14.sp)
                                     }
                                 }

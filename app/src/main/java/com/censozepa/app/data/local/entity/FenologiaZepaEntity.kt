@@ -20,5 +20,6 @@ data class FenologiaZepaEntity(
     val estatus_oct: String?,
     val estatus_nov: String?,
     val estatus_dic: String?,
-    val abundancia: String?
+    val abundancia: String?,
+    val categoria: String?
 )
