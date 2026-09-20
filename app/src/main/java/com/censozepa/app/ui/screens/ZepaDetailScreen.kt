@@ -62,12 +62,12 @@ fun ZepaDetailScreenContent(
     var showHistory by remember { mutableStateOf(false) }
     var pastSessions by remember { mutableStateOf<List<SesionEntity>>(emptyList()) }
 
-    // Load ZEPA, Species, and Favorite status
+    // Load ZEPA, Species for this specific ZEPA, and Favorite status
     LaunchedEffect(zepaId) {
         withContext(Dispatchers.IO) {
             val db = DatabaseProvider.getDatabase(context)
             zepa = db.zepaDao().getById(zepaId)
-            speciesList = db.especieDao().getAll().first()
+            speciesList = db.especieDao().getSpeciesForZepa(zepaId)
             isFavorite = db.favoriteDao().isFavorite(zepaId)
         }
     }
@@ -150,6 +150,7 @@ fun ZepaDetailScreenContent(
                         Text("Código: ${zepa!!.id_codigo}", fontWeight = FontWeight.Bold)
                         Text("Provincia: ${zepa!!.provincia ?: "N/D"}")
                         Text("Superficie: ${zepa!!.superficie ?: 0.0} ha")
+                        Text("Especies catalogadas en esta ZEPA: ${speciesList.size}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -230,7 +231,7 @@ fun ZepaDetailScreenContent(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        label = { Text("Buscar especie de ave...") },
+                        label = { Text("Buscar entre ${speciesList.size} especies de esta ZEPA...") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -247,13 +248,13 @@ fun ZepaDetailScreenContent(
                     if (selectedSpecies == null) {
                         LazyColumn(
                             modifier = Modifier
-                                .height(140.dp)
+                                .height(180.dp)
                                 .fillMaxWidth()
                         ) {
                             items(filteredSpecies) { especie ->
                                 ListItem(
                                     headlineContent = { Text(especie.nombre_comun ?: especie.codigo_n2000, fontWeight = FontWeight.Bold) },
-                                    supportingContent = { Text(especie.nombre_cientifico) },
+                                    supportingContent = { Text("${especie.nombre_cientifico} (${especie.categoria})") },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { selectedSpecies = especie }
@@ -268,7 +269,7 @@ fun ZepaDetailScreenContent(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text("Especie seleccionada:", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
                                 Text(selectedSpecies!!.nombre_comun ?: selectedSpecies!!.codigo_n2000, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                Text(selectedSpecies!!.nombre_cientifico, fontSize = 12.sp, fontStyle = FontStyle.Italic)
+                                Text("${selectedSpecies!!.nombre_cientifico} · ${selectedSpecies!!.categoria}", fontSize = 12.sp, fontStyle = FontStyle.Italic)
 
                                 Spacer(modifier = Modifier.height(8.dp))
 

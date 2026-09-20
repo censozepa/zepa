@@ -15,6 +15,13 @@ interface EspecieDao {
     @Query("SELECT * FROM especie WHERE codigo_n2000 = :codigo")
     suspend fun getByCodigo(codigo: String): EspecieEntity?
 
+    @Query("""
+        SELECT e.* FROM especie e
+        JOIN fenologia_zepa f ON e.codigo_n2000 = f.id_especie
+        WHERE f.id_zepa = :zepaId
+    """)
+    suspend fun getSpeciesForZepa(zepaId: String): List<EspecieEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(especies: List<EspecieEntity>)
 }
