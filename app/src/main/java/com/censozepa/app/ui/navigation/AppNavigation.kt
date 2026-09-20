@@ -24,4 +24,7 @@ object ObservationsScreen
 object FavoritesScreen
 
 @Serializable
+object BirdListScreen
+
+@Serializable
 object SettingsScreen

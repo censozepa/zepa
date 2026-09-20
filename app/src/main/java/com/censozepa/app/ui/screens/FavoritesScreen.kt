@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.Normalizer
+
+// Helper to ignore accents (tildes) and case in search
+fun String.normalizeAccents(): String {
+    val normal = Normalizer.normalize(this, Normalizer.Form.NFD)
+    return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normal, "")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,21 +98,21 @@ fun FavoritesScreenContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Search bar to add favorites
+                // Search bar with accent-insensitive filtering
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Buscar ZEPA para añadir a favoritos...") },
+                    label = { Text("Buscar ZEPA para añadir a favoritas...") },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
 
                 if (searchQuery.isNotBlank()) {
+                    val normalizedQuery = searchQuery.normalizeAccents()
                     val searchResults = allZepas.filter {
-                        it.nombre.contains(searchQuery, ignoreCase = true) ||
-                        it.id_codigo.contains(searchQuery, ignoreCase = true) ||
-                        (it.provincia?.contains(searchQuery, ignoreCase = true) == true)
+                        it.nombre.normalizeAccents().contains(normalizedQuery, ignoreCase = true) ||
+                        it.id_codigo.normalizeAccents().contains(normalizedQuery, ignoreCase = true)
                     }
 
                     Text("Resultados de búsqueda (${searchResults.size}):", fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -127,10 +135,12 @@ fun FavoritesScreenContent(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("${zepa.id_codigo} - ${zepa.nombre}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("Provincia: ${zepa.provincia ?: "N/D"}", fontSize = 11.sp)
-                                    }
+                                    Text(
+                                        text = "${zepa.id_codigo} - ${zepa.nombre}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.weight(1f)
+                                    )
                                     IconButton(onClick = {
                                         coroutineScope.launch(Dispatchers.IO) {
                                             val db = DatabaseProvider.getDatabase(context)
@@ -187,10 +197,12 @@ fun FavoritesScreenContent(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("${zepa.id_codigo} - ${zepa.nombre}", fontWeight = FontWeight.Bold)
-                                        Text("Provincia: ${zepa.provincia ?: "N/D"}", fontSize = 12.sp)
-                                    }
+                                    Text(
+                                        text = "${zepa.id_codigo} - ${zepa.nombre}",
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    // Explicit delete favorite button with trash icon
                                     IconButton(onClick = {
                                         coroutineScope.launch(Dispatchers.IO) {
                                             val db = DatabaseProvider.getDatabase(context)
@@ -198,7 +210,11 @@ fun FavoritesScreenContent(
                                             loadData()
                                         }
                                     }) {
-                                        Icon(Icons.Filled.Bookmark, contentDescription = "Eliminar favorito", tint = MaterialTheme.colorScheme.primary)
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Eliminar de favoritos",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                             }

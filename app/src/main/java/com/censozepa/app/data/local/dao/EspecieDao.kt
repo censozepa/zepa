@@ -12,6 +12,9 @@ interface EspecieDao {
     @Query("SELECT * FROM especie")
     fun getAll(): Flow<List<EspecieEntity>>
 
+    @Query("SELECT * FROM especie ORDER BY nombre_comun ASC")
+    suspend fun getAllList(): List<EspecieEntity>
+
     @Query("SELECT * FROM especie WHERE codigo_n2000 = :codigo")
     suspend fun getByCodigo(codigo: String): EspecieEntity?
 

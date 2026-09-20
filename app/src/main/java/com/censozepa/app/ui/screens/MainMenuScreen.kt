@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ fun MainMenuScreenContent(
     onSelectProvince: () -> Unit,
     onViewObservations: () -> Unit,
     onViewFavorites: () -> Unit,
+    onViewBirdList: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     Scaffold(
@@ -77,6 +79,13 @@ fun MainMenuScreenContent(
                 )
 
                 MenuButton(
+                    title = "Listado Aves",
+                    subtitle = "Catálogo general de todas las aves",
+                    icon = Icons.Filled.MenuBook,
+                    onClick = onViewBirdList
+                )
+
+                MenuButton(
                     title = "Configuraciones",
                     subtitle = "Ajustes, datos y exportación",
                     icon = Icons.Filled.Settings,
@@ -98,7 +107,7 @@ fun MenuButton(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(88.dp),
+            .height(84.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -113,14 +122,14 @@ fun MenuButton(
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFF1B4D3E),
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(46.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
@@ -132,13 +141,13 @@ fun MenuButton(
                 Text(
                     text = title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     color = Color(0xFF1B4D3E)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     color = Color.Gray
                 )
             }

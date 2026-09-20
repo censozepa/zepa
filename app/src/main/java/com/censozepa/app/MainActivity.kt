@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.censozepa.app.ui.navigation.BirdListScreen
 import com.censozepa.app.ui.navigation.CcaaListScreen
 import com.censozepa.app.ui.navigation.FavoritesScreen
 import com.censozepa.app.ui.navigation.MainMenuScreen
@@ -21,6 +22,7 @@ import com.censozepa.app.ui.navigation.SettingsScreen
 import com.censozepa.app.ui.navigation.SplashScreen
 import com.censozepa.app.ui.navigation.ZepaDetailScreen
 import com.censozepa.app.ui.navigation.ZepaListScreen
+import com.censozepa.app.ui.screens.BirdListScreenContent
 import com.censozepa.app.ui.screens.CcaaListScreenContent
 import com.censozepa.app.ui.screens.FavoritesScreenContent
 import com.censozepa.app.ui.screens.MainMenuScreenContent
@@ -68,6 +70,7 @@ fun CensoZepaApp() {
                 onSelectProvince = { navController.navigate(CcaaListScreen) },
                 onViewObservations = { navController.navigate(ObservationsScreen) },
                 onViewFavorites = { navController.navigate(FavoritesScreen) },
+                onViewBirdList = { navController.navigate(BirdListScreen) },
                 onOpenSettings = { navController.navigate(SettingsScreen) }
             )
         }
@@ -113,6 +116,12 @@ fun CensoZepaApp() {
                 onZepaClick = { zepaId ->
                     navController.navigate(ZepaDetailScreen(zepaId))
                 }
+            )
+        }
+
+        composable<BirdListScreen> {
+            BirdListScreenContent(
+                onBack = { navController.popBackStack() }
             )
         }
 
