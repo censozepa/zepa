@@ -19,7 +19,7 @@ interface EspecieDao {
     suspend fun getByCodigo(codigo: String): EspecieEntity?
 
     @Query("""
-        SELECT e.codigo_n2000, e.nombre_cientifico, e.nombre_comun, f.categoria AS categoria 
+        SELECT e.codigo_n2000, e.nombre_cientifico, e.nombre_comun, f.categoria AS categoria, e.foto_asset AS foto_asset 
         FROM especie e
         JOIN fenologia_zepa f ON e.codigo_n2000 = f.id_especie
         WHERE f.id_zepa = :zepaId

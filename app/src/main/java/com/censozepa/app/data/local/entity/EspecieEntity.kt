@@ -8,5 +8,6 @@ data class EspecieEntity(
     @PrimaryKey val codigo_n2000: String,
     val nombre_cientifico: String,
     val nombre_comun: String?,
-    val categoria: String?
+    val categoria: String?,
+    val foto_asset: String?
 )
