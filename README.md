@@ -40,9 +40,19 @@ La base de datos maestra de la aplicación (`censozepa.db`) se construye mediant
 
 ---
 
-## 3. Nomenclatura Taxonómica y Actualización Futura
+## 3. Nomenclatura Taxonómica y Trazabilidad de Códigos (Subespecies)
 
 * **Nomenclatura Científica y Vernácula (SEO/BirdLife):**
   Se cruzan los nombres científicos oficiales (`SPECIESNAME`) del estándar europeo con la nomenclatura ornitológica oficial en castellano avalada por **SEO/BirdLife**, garantizando que cada registro muestre simultáneamente el nombre común en negrita y el nombre científico en cursiva.
+* **Consideraciones Taxonómicas y Códigos N2000 (Códigos Múltiples por Diseño):**
+  Es importante señalar que en las bases de datos de la Red Natura 2000 pueden coexistir distintos códigos para un mismo grupo taxonómico por diseño institucional (separación entre especie nominal y subespecies regionales). 
+  
+  Por ejemplo, el código **A673** en la nomenclatura oficial de la Red Natura 2000 pertenece precisamente a la subespecie nominal del alcaraván común: **Burhinus oedicnemus oedicnemus**.
+
+  ### Diferencia entre los códigos `A133` y `A673`:
+  * **A133**: Es el código taxonómico estándar asignado a la especie en su conjunto (*Burhinus oedicnemus*). Este es el código que aparece formalmente registrado en el Formulario Normalizado de Datos (SDF) de múltiples espacios protegidos.
+  * **A673**: Es el código de desglose subespecífico que utiliza la Agencia Europea de Medio Ambiente (EEA) y EIONET en los listados de la Directiva de Aves para identificar concretamente a la **subespecie nominal europea y peninsular** (*Burhinus oedicnemus oedicnemus*), diferenciándola de otras subespecies insulares o africanas (como *B. o. insularum* o *B. o. harterti*).
+
+  En la práctica, ambos códigos hacen referencia a las poblaciones de alcaraván común que nidifican y se reproducen en los hábitats esteparios de España.
 * **Pipeline de Actualización (ETL):**
   La arquitectura del proyecto en el directorio `scripts/` permite que, ante futuras actualizaciones del Banco de Datos de la Naturaleza del MITECO o de la EEA, la base de datos maestra (`censozepa.db`) pueda ser íntegramente regenerada y sincronizada de forma automatizada mediante scripts relacionales en Python.
