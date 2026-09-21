@@ -12,36 +12,37 @@ Dada la naturaleza científica del proyecto y la necesidad de garantizar una tra
 
 La fuente primaria de datos alfanuméricos y geográficos que alimenta el motor SQLite de la aplicación (`censozepa.db`) procede de los repositorios públicos oficiales de la Unión Europea y del Estado Español:
 
-* **Agencia Europea de Medio Ambiente (EEA) / EIONET & Comisión Europea:** 
-  Se ha empleado la base de datos relacional consolidada de la Red Natura 2000 (*Natura 2000 Public Database*), la cual unifica e integra de forma estandarizada la totalidad de la información contenida en los Formularios Normalizados de Datos (*Standard Data Forms* - SDF) individuales de los Estados miembros.
-* **Fecha de Referencia y Versión del Dataset Oficial:**
-  * **Fecha de Publicación Institucional:** **4 de enero de 2023 (`20230104`)**.
-  * **Ciclo Oficial Consolidado:** Datos oficiales correspondientes al cierre de **diciembre de 2021 (`end2021`)** para el territorio de España (`ES`).
-* **MITECO (Banco de Datos de la Naturaleza):**
-  Conforme a la Ley 42/2007 del Patrimonio Natural y de la Biodiversidad, estos registros integran los formularios SDF estatales remitidos por las comunidades autónomas al Ministerio para la Transición Ecológica y el Reto Demográfico.
+* **MITECO (Banco de Datos de la Naturaleza) / Ministerio para la Transición Ecológica y el Reto Demográfico:** 
+  Se ha empleado la base de datos relacional consolidada de la Red Natura 2000 para España, publicada a través del Banco de Datos de la Naturaleza en el marco del Inventario Español del Patrimonio Natural y de la Biodiversidad (Ley 42/2007).
+* **Enlace de Descarga de los Datos Brutos Oficiales (Actualización 2024):**
+  Los datos relacionales originales en formato Microsoft Access (`.accdb`) se obtienen directamente del portal oficial del MITECO:
+  👉 **[Banco de Datos de la Naturaleza - MITECO](https://www.miteco.gob.es/es/biodiversidad/servicios/banco-datos-naturaleza/informacion-disponible/index.aspx)**
+  * *Archivo bruto fuente utilizado:* [`Natura2000_end2024_ES.zip`](https://www.miteco.gob.es/content/dam/miteco/es/biodiversidad/servicios/banco-datos-naturaleza/informacion-disponible/cntryes/Natura2000_end2024_ES.zip) (volcado oficial actualizado a **fin de 2024**).
+* **Agencia Europea de Medio Ambiente (EEA) / EIONET:**
+  Sincronizado con los estándares europeos de los Formularios Normalizados de Datos (*Standard Data Forms* - SDF).
 
 ---
 
-## 2. Estructura Relacional y Arquitectura de Datos
+## 2. Estructura Relacional y Criterios de Filtrado ETL
 
-La base de datos maestra de la aplicación (`censozepa.db`) se deriva directamente del volcado relacional original en formato Microsoft Access (`.accdb`), manteniendo las relaciones normalizadas entre entidades clave:
+La base de datos maestra de la aplicación (`censozepa.db`) se construye mediante un pipeline ETL automatizado en Python (`scripts/rebuild_perfect_database_by_scientific_name.py`) que procesa el volcado original Access (`.accdb`) aplicando estrictos criterios científicos y normativos:
 
-1. **`NATURA2000SITES` (Tabla `zepa` y `ccaa`):**
-   Contiene el inventario completo de los espacios protegidos clasificados como ZEPA en España. Almacena el código oficial Natura 2000 (ej. `ES0000365`), la denominación oficial del espacio, la superficie geográfica en hectáreas (`AREAHA`), la adscripción regional (NUTS / CCAA) y las memorias descriptivas e importancias ecológicas extraídas de las secciones de calidad y características del SDF.
-2. **`SPECIES` (Tabla `especie` y `fenologia_zepa` - Sección 3.2):**
-   Agrupa las especies de aves de la Directiva Aves (Directiva 2009/147/CE) referidas en el Artículo 4 (especies del Anexo I y especies migratorias regulares), vinculando rigurosamente cada espacio con sus taxones evaluados, categorías de población (`POPULATION`), conservación (`CONSERVATION`), categorías de abundancia (`A`, `B`, `C`, `D`) y estatus fenológico mensual (Enero–Diciembre).
-3. **`OTHERSPECIES` (Sección 3.3):**
-   Integra las especies de avifauna y fauna relevante adicionales declaradas en las fichas oficiales.
+1. **Clasificación y Filtrado Estricto de ZEPAs (`NATURA2000SITES`):**
+   * En la Red Natura 2000, los espacios protegidos se clasifican según su tipo (*SITETYPE*):
+     * **`A`** = ZEPA (Zonas de Especial Protección para las Aves - *Special Protection Areas*).
+     * **`B`** = ZEC / LIC (Lugares de Importancia Comunitaria / Zonas de Especial Conservación orientadas a hábitats y otras especies).
+     * **`C`** = Espacios mixtos designados simultáneamente como ZEPA y ZEC.
+   * **Criterio ETL aplicado:** Se filtran e integran estrictamente los espacios con **`SITETYPE IN ('A', 'C')`**, excluyendo los espacios de tipo `B` (ZEC puros) para ceñir la aplicación exclusivamente al ámbito de protección de la avifauna. Esto da como resultado un total exacto de **658 ZEPAs** oficiales en España.
+2. **Filtrado Estricto de Avifauna (`SPECIES` y `OTHERSPECIES`):**
+   * Se procesan exclusivamente las especies pertenecientes a la clase *Aves* (identificadas en el estándar N2000 con códigos alfanuméricos cuyo prefijo es **`'A'`**), garantizando que no se incluyan mamíferos, reptiles, anfibios, insectos o flora que formen parte de otros inventarios de la Red Natura 2000.
+3. **Mantenimiento de Fenología y Abundancia:**
+   * Se preservan las evaluaciones poblacionales (`POPULATION`, `CONSERVATION`) y las categorías de abundancia oficial (`A`, `B`, `C`, `D`), junto con el desglose por categorías del Artículo 4 (`Art. 4`) y de otras especies relevantes (`Relevante 3.3`).
 
 ---
 
-## 3. Protocolo de Procesamiento y Estandarización Científica
+## 3. Nomenclatura Taxonómica y Actualización Futura
 
-Para garantizar la interoperabilidad en campo y el rigor taxonómico, se ha aplicado el siguiente pipeline automatizado de procesamiento mediante scripts de extracción (`scripts/`):
-
-* **Filtrado Exclusivo de Avifauna:** 
-  Se depuran y filtran estrictamente los taxones pertenecientes a la clase *Aves*, excluyendo otros grupos faunísticos o florísticos presentes en el dataset general de la Red Natura 2000, asegurando la coherencia biológica con el ámbito de las ZEPAs.
-* **Nomenclatura Taxonómica y Vernácula (SEO/BirdLife):**
+* **Nomenclatura Científica y Vernácula (SEO/BirdLife):**
   Se cruzan los nombres científicos oficiales (`SPECIESNAME`) del estándar europeo con la nomenclatura ornitológica oficial en castellano avalada por **SEO/BirdLife**, garantizando que cada registro muestre simultáneamente el nombre común en negrita y el nombre científico en cursiva.
-* **Mantenimiento y Actualización Futura (Pipeline ETL):**
+* **Pipeline de Actualización (ETL):**
   La arquitectura del proyecto en el directorio `scripts/` permite que, ante futuras actualizaciones del Banco de Datos de la Naturaleza del MITECO o de la EEA, la base de datos maestra (`censozepa.db`) pueda ser íntegramente regenerada y sincronizada de forma automatizada mediante scripts relacionales en Python.

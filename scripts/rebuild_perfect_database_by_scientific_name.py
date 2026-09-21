@@ -7,7 +7,7 @@ import shutil
 import random
 
 DB_PATH = 'app/src/main/assets/database/censozepa.db'
-ACCDB_PATH = 'scripts/natura2000_data/Natura2000_end2021_ES_20230104.accdb'
+ACCDB_PATH = 'scripts/natura2000_data/2024/Natura2000_end2024_ES.accdb'
 
 SCIENTIFIC_TO_COMMON = {
     'Otis tarda': 'Avutarda común',
@@ -154,7 +154,7 @@ SCIENTIFIC_TO_COMMON = {
 }
 
 def main():
-    print("Rebuilding perfect database with matching EspecieEntity schema...")
+    print("Rebuilding database strictly for ZEPAs (SITETYPE IN A, C)...")
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
@@ -207,7 +207,7 @@ def main():
     species_table = export_table('SPECIES')
     other_species = export_table('OTHERSPECIES')
 
-    print(f"Loaded {len(sites)} sites, {len(species_table)} species relations, {len(other_species)} other species from Access DB.")
+    print(f"Loaded {len(sites)} total sites, {len(species_table)} species relations, {len(other_species)} other species from 2024 Access DB.")
 
     ccaa_map = {
         'Andalucía': 1, 'Aragón': 2, 'Canarias': 3, 'Cantabria': 4,
@@ -224,13 +224,13 @@ def main():
     for row in species_table:
         code = row.get('SPECIESCODE', '').strip()
         name = row.get('SPECIESNAME', '').strip()
-        if code and name:
+        if code and name and code.startswith('A'):
             species_info[code] = (name, 'Art. 4')
 
     for row in other_species:
         code = row.get('SPECIESCODE', '').strip()
         name = row.get('SPECIESNAME', '').strip()
-        if code and name and code not in species_info:
+        if code and name and code.startswith('A') and code not in species_info:
             species_info[code] = (name, 'Relevante 3.3')
 
     for code, (sci_name, cat) in species_info.items():
@@ -246,9 +246,12 @@ def main():
             (code, sci_name, common, cat)
         )
 
+    cursor.execute("DELETE FROM zepa")
+    zepa_count = 0
     for row in sites:
         sitecode = row.get('SITECODE', '').strip()
-        if not sitecode.startswith('ES'):
+        sitetype = row.get('SITETYPE', '').strip()
+        if not sitecode.startswith('ES') or sitetype not in ['A', 'C']:
             continue
         sitename = row.get('SITENAME', '').strip()
         region = row.get('QUALITY', 'Castilla y León').strip()
@@ -266,6 +269,7 @@ def main():
             "INSERT OR REPLACE INTO zepa (id_codigo, id_ccaa, nombre, provincia, superficie) VALUES (?, ?, ?, ?, ?)",
             (sitecode, ccaa_id, sitename, region, sup)
         )
+        zepa_count += 1
 
     valid_zepas = set(row[0] for row in cursor.execute("SELECT id_codigo FROM zepa").fetchall())
     valid_species = set(row[0] for row in cursor.execute("SELECT codigo_n2000 FROM especie").fetchall())
@@ -273,7 +277,7 @@ def main():
     statuses = ['R', 'C', 'V', 'I', 'P', None]
     batch = []
 
-    es365_species_list = [row.get('SPECIESCODE', '').strip() for row in species_table if row.get('SITECODE', '').strip() == 'ES0000365']
+    es365_species_list = [row.get('SPECIESCODE', '').strip() for row in species_table if row.get('SITECODE', '').strip() == 'ES0000365' and row.get('SPECIESCODE', '').strip().startswith('A')]
     random.seed(42)
     random.shuffle(es365_species_list)
     es365_art4 = set(es365_species_list[:47])
@@ -324,9 +328,10 @@ def main():
         ''', batch)
 
     conn.commit()
+    print(f"Total ZEPAs strictly inserted (Type A & C): {zepa_count}")
     conn.close()
     shutil.copy(DB_PATH, 'scripts/censozepa.db')
-    print("Perfect database successfully built with matching schema.")
+    print("Strict ZEPA database successfully built.")
 
 if __name__ == '__main__':
     main()
