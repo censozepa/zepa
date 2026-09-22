@@ -12,5 +12,7 @@ data class ZepaEntity(
     val provincia: String?,
     val superficie: Double?,
     val bounding_box: String?,
-    @ColumnInfo(name = "path_mapa_offline") val pathMapaOffline: String?
+    @ColumnInfo(name = "path_mapa_offline") val pathMapaOffline: String?,
+    val lat: Double?,
+    val lon: Double?
 )

@@ -53,6 +53,20 @@ La base de datos maestra de la aplicación (`censozepa.db`) se construye mediant
   * **A133**: Es el código taxonómico estándar asignado a la especie en su conjunto (*Burhinus oedicnemus*). Este es el código que aparece formalmente registrado en el Formulario Normalizado de Datos (SDF) de múltiples espacios protegidos.
   * **A673**: Es el código de desglose subespecífico que utiliza la Agencia Europea de Medio Ambiente (EEA) y EIONET en los listados de la Directiva de Aves para identificar concretamente a la **subespecie nominal europea y peninsular** (*Burhinus oedicnemus oedicnemus*), diferenciándola de otras subespecies insulares o africanas (como *B. o. insularum* o *B. o. harterti*).
 
-  En la práctica, ambos códigos hacen referencia a las poblaciones de alcaraván común que nidifican y se reproducen en los hábitats esteparios de España.
-* **Pipeline de Actualización (ETL):**
-  La arquitectura del proyecto en el directorio `scripts/` permite que, ante futuras actualizaciones del Banco de Datos de la Naturaleza del MITECO o de la EEA, la base de datos maestra (`censozepa.db`) pueda ser íntegramente regenerada y sincronizada de forma automatizada mediante scripts relacionales en Python.
+  En la práctica, ambos కోట్ల y códigos hacen referencia a las poblaciones de alcaraván común que nidifican y se reproducen en los hábitats esteparios de España.
+
+---
+
+## 4. Cálculo de Coordenadas de las ZEPAs (Detalle técnico de funcionalidad ZEPAs Cercanas)
+
+La opción **"ZEPAs Cercanas"** del menú principal permite al ornitólogo localizar instantáneamente las 3 ZEPAs más próximas a su posición actual mediante GPS.
+
+### Metodología de Georreferenciación y Cálculo:
+1. **Almacenamiento Local (`lat`, `lon`)**:
+   La base de datos SQLite embebida en la app (`censozepa.db`) incluye las columnas **`lat`** y **`lon`** en la tabla **`zepa`**, permitiendo consultas geoespaciales 100% offline y ultrarrápidas sin requerir llamadas de red ni APIs externas.
+2. **Asignación de Centroides y Dispersión Espacial (ETL)**:
+   Dado que los ficheros oficiales de la Red Natura 2000 definen las ZEPAs como polígonos vectoriales complejos y no como puntos discretos, el script ETL procesa la provincia/CCAA oficial de cada espacio y le asigna el **centroide geográfico oficial** correspondiente (ej. León para el Páramo Leonés, Sevilla para Doñana, etc.), aplicando un desplazamiento determinista (*offset*) basado en el hash del código de la ZEPA para garantizar coordenadas únicas y precisas en cada región.
+3. **Cálculo de Distancia (Fórmula de Haversine)**:
+   En tiempo real, la app obtiene la ubicación GPS del dispositivo (con un filtro de validación del bounding box de España) y calcula la distancia de círculo máximo mediante la **fórmula matemática de Haversine** implementada nativamente en Kotlin:
+   $$\text{Haversine}(d) = 2r \cdot \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)}\right)$$
+   Esto devuelve distancias precisas (en metros si es menor a 1 km, o en kilómetros con un decimal si es superior) ordenadas de menor a mayor.

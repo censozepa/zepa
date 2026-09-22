@@ -19,6 +19,7 @@ import com.censozepa.app.ui.navigation.BirdMenuScreen
 import com.censozepa.app.ui.navigation.CcaaListScreen
 import com.censozepa.app.ui.navigation.FavoritesScreen
 import com.censozepa.app.ui.navigation.MainMenuScreen
+import com.censozepa.app.ui.navigation.NearbyZepasScreen
 import com.censozepa.app.ui.navigation.ObservationsScreen
 import com.censozepa.app.ui.navigation.SettingsScreen
 import com.censozepa.app.ui.navigation.ZepaBirdsListScreen
@@ -30,6 +31,7 @@ import com.censozepa.app.ui.screens.BirdMenuScreenContent
 import com.censozepa.app.ui.screens.CcaaListScreenContent
 import com.censozepa.app.ui.screens.FavoritesScreenContent
 import com.censozepa.app.ui.screens.MainMenuScreenContent
+import com.censozepa.app.ui.screens.NearbyZepasScreenContent
 import com.censozepa.app.ui.screens.ObservationsScreenContent
 import com.censozepa.app.ui.screens.SettingsScreenContent
 import com.censozepa.app.ui.screens.ZepaBirdsListScreenContent
@@ -75,6 +77,7 @@ fun CensoZepaApp(initialZepaId: String? = null) {
                 onSelectProvince = { navController.navigate(CcaaListScreen) },
                 onViewObservations = { navController.navigate(ObservationsScreen) },
                 onViewFavorites = { navController.navigate(FavoritesScreen) },
+                onViewNearbyZepas = { navController.navigate(NearbyZepasScreen) },
                 onViewBirdList = { navController.navigate(BirdMenuScreen) },
                 onOpenSettings = { navController.navigate(SettingsScreen) }
             )
@@ -126,6 +129,15 @@ fun CensoZepaApp(initialZepaId: String? = null) {
                 onZepaClick = { zepaId ->
                     navController.navigate(ZepaDetailScreen(zepaId))
                 }
+            )
+        }
+
+        composable<NearbyZepasScreen> {
+            NearbyZepasScreenContent(
+                onZepaClick = { zepaId ->
+                    navController.navigate(ZepaDetailScreen(zepaId))
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 

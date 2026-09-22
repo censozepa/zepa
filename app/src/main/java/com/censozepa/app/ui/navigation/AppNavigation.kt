@@ -21,6 +21,9 @@ object ObservationsScreen
 object FavoritesScreen
 
 @Serializable
+object NearbyZepasScreen
+
+@Serializable
 object BirdMenuScreen
 
 @Serializable

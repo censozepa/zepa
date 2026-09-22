@@ -4,10 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ fun MainMenuScreenContent(
     onSelectProvince: () -> Unit,
     onViewObservations: () -> Unit,
     onViewFavorites: () -> Unit,
+    onViewNearbyZepas: () -> Unit,
     onViewBirdList: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
@@ -79,9 +81,16 @@ fun MainMenuScreenContent(
                 )
 
                 MenuButton(
+                    title = "ZEPAs Cercanas",
+                    subtitle = "Localizar ZEPAs próximas mediante GPS",
+                    icon = Icons.Filled.NearMe,
+                    onClick = onViewNearbyZepas
+                )
+
+                MenuButton(
                     title = "Listado Aves",
                     subtitle = "Catálogo general de todas las aves",
-                    icon = Icons.Filled.MenuBook,
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
                     onClick = onViewBirdList
                 )
 
