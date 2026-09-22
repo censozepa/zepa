@@ -21,7 +21,16 @@ object ObservationsScreen
 object FavoritesScreen
 
 @Serializable
+object BirdMenuScreen
+
+@Serializable
 object BirdListScreen
+
+@Serializable
+object ZepaSelectorForBirdsScreen
+
+@Serializable
+data class ZepaBirdsListScreen(val zepaId: String, val zepaName: String)
 
 @Serializable
 object SettingsScreen
