@@ -2,16 +2,21 @@ package com.censozepa.app.ui.screens
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +62,12 @@ fun NearbyZepasScreenContent(
     var nearbyZepas by remember { mutableStateOf<List<ZepaWithDistance>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var hasSearched by remember { mutableStateOf(false) }
+    var userLat by remember { mutableStateOf(42.5987) }
+    var userLon by remember { mutableStateOf(-5.5671) }
     var userLocationStr by remember { mutableStateOf("") }
+    
+    // Expanded state for the top 3 ZEPA cards
+    var expandedZepaId by remember { mutableStateOf<String?>(null) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -66,6 +75,8 @@ fun NearbyZepasScreenContent(
         if (isGranted) {
             findNearbyZepas(context) { list, lat, lon ->
                 nearbyZepas = list
+                userLat = lat
+                userLon = lon
                 userLocationStr = "GPS: %.4f, %.4f".format(lat, lon)
                 isSearching = false
                 hasSearched = true
@@ -73,7 +84,9 @@ fun NearbyZepasScreenContent(
         } else {
             isSearching = false
             hasSearched = true
-            findNearbyZepasWithCoords(context, 42.5987, -5.5671) { list ->
+            userLat = 42.5987
+            userLon = -5.5671
+            findNearbyZepasWithCoords(context, userLat, userLon) { list ->
                 nearbyZepas = list
                 userLocationStr = "Ubicación por defecto (León) - Permiso denegado"
             }
@@ -113,6 +126,8 @@ fun NearbyZepasScreenContent(
                         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
                             findNearbyZepas(context) { list, lat, lon ->
                                 nearbyZepas = list
+                                userLat = lat
+                                userLon = lon
                                 userLocationStr = "GPS: %.4f, %.4f".format(lat, lon)
                                 isSearching = false
                                 hasSearched = true
@@ -136,12 +151,50 @@ fun NearbyZepasScreenContent(
                 CircularProgressIndicator()
                 Text("Obteniendo ubicación GPS y calculando distancias...")
             } else if (hasSearched) {
-                if (userLocationStr.isNotBlank()) {
-                    Text(userLocationStr, fontSize = 12.sp, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.secondary)
+                // Clickable GPS coordinates banner
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val uri = Uri.parse("geo:$userLat,$userLon?q=$userLat,$userLon(Mi Ubicación)")
+                            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                setPackage("com.google.android.apps.maps")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$userLat,$userLon"))
+                                context.startActivity(webIntent)
+                            }
+                        },
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Tu ubicación actual (Ver en Maps):", fontSize = 12.sp, color = Color.Gray)
+                            Text(userLocationStr.ifBlank { "GPS: %.4f, %.4f".format(userLat, userLon) }, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Top 3 ZEPAs más cercanas:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Top 3 ZEPAs más cercanas (Pulsa para ver detalles):", fontWeight = FontWeight.Bold, fontSize = 15.sp)
 
                 LazyColumn(
                     modifier = Modifier
@@ -150,6 +203,7 @@ fun NearbyZepasScreenContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(nearbyZepas) { item ->
+                        val isExpanded = expandedZepaId == item.zepa.id_codigo
                         val distText = if (item.distanceKm < 1.0) {
                             "${(item.distanceKm * 1000).toInt()} m"
                         } else {
@@ -159,9 +213,13 @@ fun NearbyZepasScreenContent(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onZepaClick(item.zepa.id_codigo) },
+                                .clickable {
+                                    expandedZepaId = if (isExpanded) null else item.zepa.id_codigo
+                                },
                             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isExpanded) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                            )
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -179,8 +237,37 @@ fun NearbyZepasScreenContent(
                                         Text(distText, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Provincia/Región: ${item.zepa.provincia ?: "N/D"} · Superficie: ${item.zepa.superficie ?: 0.0} ha", fontSize = 12.sp)
+
+                                if (isExpanded) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    HorizontalDivider()
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Provincia/Región: ${item.zepa.provincia ?: "N/D"}", fontSize = 13.sp)
+                                    Text("Superficie protegida: ${item.zepa.superficie ?: 0.0} ha", fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Button(
+                                        onClick = {
+                                            val zLat = item.zepa.lat ?: 40.0
+                                            val zLon = item.zepa.lon ?: -4.0
+                                            val uri = Uri.parse("google.navigation:q=$zLat,$zLon&mode=d")
+                                            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                                setPackage("com.google.android.apps.maps")
+                                            }
+                                            try {
+                                                context.startActivity(intent)
+                                            } catch (_: Exception) {
+                                                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$zLat,$zLon&travelmode=driving"))
+                                                context.startActivity(webIntent)
+                                            }
+                                        },
+                                        modifier = Modifier.align(Alignment.End),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                                    ) {
+                                        Icon(Icons.Filled.DirectionsCar, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("🚗 Cómo llegar a la ZEPA")
+                                    }
+                                }
                             }
                         }
                     }
@@ -192,13 +279,12 @@ fun NearbyZepasScreenContent(
 
 private fun findNearbyZepas(context: Context, onResult: (List<ZepaWithDistance>, Double, Double) -> Unit) {
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-    var lat = 42.5987 // Default León
+    var lat = 42.5987
     var lon = -5.5671
     try {
         val lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
         if (lastKnown != null && lastKnown.latitude in 27.0..44.0 && lastKnown.longitude in -18.0..5.0) {
-            // Within Spain bounding box (including Canary Islands)
             lat = lastKnown.latitude
             lon = lastKnown.longitude
         }
