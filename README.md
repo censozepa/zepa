@@ -1,5 +1,13 @@
 # Censo ZEPA — Sistema Móvil de Censos Ornitológicos en la Red Natura 2000
 
+## Capturas de pantalla
+
+| Lanzamiento / Aplicación | Menú Principal | Conteo ZEPA (ES0000365) |
+| :---: | :---: | :---: |
+| ![Splash Screen](docs/screenshots/splash.png) | ![Menú Principal](docs/screenshots/menu.png) | ![Conteo ZEPA](docs/screenshots/counting_es0000365.png) |
+
+---
+
 ## Memoria Metodológica y Rigor Científico de la Base de Datos
 
 El presente documento detalla la fundamentación metodológica, la procedencia institucional y el proceso de construcción ETL (Extract, Transform, Load) de la base de datos relacional integrada en la aplicación móvil **Censo ZEPA**. 
@@ -53,7 +61,7 @@ La base de datos maestra de la aplicación (`censozepa.db`) se construye mediant
   * **A133**: Es el código taxonómico estándar asignado a la especie en su conjunto (*Burhinus oedicnemus*). Este es el código que aparece formalmente registrado en el Formulario Normalizado de Datos (SDF) de múltiples espacios protegidos.
   * **A673**: Es el código de desglose subespecífico que utiliza la Agencia Europea de Medio Ambiente (EEA) y EIONET en los listados de la Directiva de Aves para identificar concretamente a la **subespecie nominal europea y peninsular** (*Burhinus oedicnemus oedicnemus*), diferenciándola de otras subespecies insulares o africanas (como *B. o. insularum* o *B. o. harterti*).
 
-  En la práctica, ambos కోట్ల y códigos hacen referencia a las poblaciones de alcaraván común que nidifican y se reproducen en los hábitats esteparios de España.
+  En la práctica, ambos códigos hacen referencia a las poblaciones de alcaraván común que nidifican y se reproducen en los hábitats esteparios de España.
 
 ---
 
