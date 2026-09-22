@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.censozepa.app.data.local.DatabaseProvider
+import com.censozepa.app.data.local.UserDataDatabase
 import com.censozepa.app.data.local.entity.AvistamientoEntity
 import com.censozepa.app.data.local.entity.EspecieEntity
 import com.censozepa.app.data.local.entity.FavoriteEntity
@@ -48,11 +50,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 import java.util.Locale
 
 fun startCensusSession(context: Context, zepaId: String, zepaName: String?, onStarted: (Int) -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
-        val db = DatabaseProvider.getDatabase(context)
+        val userDb = UserDataDatabase.getDatabase(context)
         val newSession = SesionEntity(
             id_zepa = zepaId,
             fecha_hora_inicio = System.currentTimeMillis(),
@@ -60,7 +63,7 @@ fun startCensusSession(context: Context, zepaId: String, zepaName: String?, onSt
             distancia_recorrida = 0.0,
             track_gps_json = null
         )
-        val id = db.sesionDao().insert(newSession).toInt()
+        val id = userDb.sesionDao().insert(newSession).toInt()
         
         val intent = Intent(context, ZepaCensoService::class.java).apply {
             putExtra("ZEPA_ID", zepaId)
@@ -100,6 +103,7 @@ fun ZepaDetailScreenContent(
     var selectedSpecies by remember { mutableStateOf<EspecieEntity?>(null) }
     var quantity by remember { mutableStateOf(1) }
     var sessionSightings by remember { mutableStateOf<List<AvistamientoEntity>>(emptyList()) }
+    var isPhenologyAlert by remember { mutableStateOf(false) }
     
     // Dialog states
     var showSightingsDialog by remember { mutableStateOf(false) }
@@ -119,9 +123,54 @@ fun ZepaDetailScreenContent(
     LaunchedEffect(zepaId) {
         withContext(Dispatchers.IO) {
             val db = DatabaseProvider.getDatabase(context)
+            val userDb = UserDataDatabase.getDatabase(context)
             zepa = db.zepaDao().getById(zepaId)
             speciesList = db.especieDao().getSpeciesForZepa(zepaId)
-            isFavorite = db.favoriteDao().isFavorite(zepaId)
+            isFavorite = userDb.favoriteDao().isFavorite(zepaId)
+        }
+    }
+
+    // Check phenology anomaly when selectedSpecies changes
+    LaunchedEffect(selectedSpecies) {
+        if (selectedSpecies != null) {
+            withContext(Dispatchers.IO) {
+                val db = DatabaseProvider.getDatabase(context)
+                val fen = db.fenologiaZepaDao().getByZepaAndEspecie(zepaId, selectedSpecies!!.codigo_n2000)
+                if (fen != null) {
+                    val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+                    val currentStatus = when (currentMonth) {
+                        1 -> fen.estatus_ene
+                        2 -> fen.estatus_feb
+                        3 -> fen.estatus_mar
+                        4 -> fen.estatus_abr
+                        5 -> fen.estatus_may
+                        6 -> fen.estatus_jun
+                        7 -> fen.estatus_jul
+                        8 -> fen.estatus_ago
+                        9 -> fen.estatus_sep
+                        10 -> fen.estatus_oct
+                        11 -> fen.estatus_nov
+                        12 -> fen.estatus_dic
+                        else -> null
+                    }
+                    val hasAnyStatus = listOf(
+                        fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
+                        fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
+                        fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
+                    ).any { !it.isNullOrBlank() && it != "-" }
+
+                    val isAbsentNow = currentStatus.isNullOrBlank() || currentStatus == "-"
+                    withContext(Dispatchers.Main) {
+                        isPhenologyAlert = hasAnyStatus && isAbsentNow
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        isPhenologyAlert = false
+                    }
+                }
+            }
+        } else {
+            isPhenologyAlert = false
         }
     }
 
@@ -160,12 +209,12 @@ fun ZepaDetailScreenContent(
                     // Favorite button
                     IconButton(onClick = {
                         coroutineScope.launch(Dispatchers.IO) {
-                            val db = DatabaseProvider.getDatabase(context)
+                            val userDb = UserDataDatabase.getDatabase(context)
                             if (isFavorite) {
-                                db.favoriteDao().removeFavorite(zepaId)
+                                userDb.favoriteDao().removeFavorite(zepaId)
                                 withContext(Dispatchers.Main) { isFavorite = false }
                             } else {
-                                db.favoriteDao().addFavorite(FavoriteEntity(zepaId))
+                                userDb.favoriteDao().addFavorite(FavoriteEntity(zepaId))
                                 withContext(Dispatchers.Main) { isFavorite = true }
                             }
                         }
@@ -182,8 +231,8 @@ fun ZepaDetailScreenContent(
                         val sesId = activeSessionId
                         if (sesId != null) {
                             coroutineScope.launch(Dispatchers.IO) {
-                                val db = DatabaseProvider.getDatabase(context)
-                                val sightings = db.avistamientoDao().getBySesion(sesId).first()
+                                val userDb = UserDataDatabase.getDatabase(context)
+                                val sightings = userDb.avistamientoDao().getBySesion(sesId).first()
                                 withContext(Dispatchers.Main) {
                                     sessionSightings = sightings
                                     showSightingsDialog = true
@@ -283,11 +332,11 @@ fun ZepaDetailScreenContent(
                                     val sessionId = activeSessionId
                                     if (sessionId != null) {
                                         coroutineScope.launch(Dispatchers.IO) {
-                                            val db = DatabaseProvider.getDatabase(context)
-                                            val sessions = db.sesionDao().getAll().first()
+                                            val userDb = UserDataDatabase.getDatabase(context)
+                                            val sessions = userDb.sesionDao().getAll().first()
                                             val currentSession = sessions.find { it.id == sessionId }
                                             if (currentSession != null) {
-                                                db.sesionDao().update(currentSession.copy(fecha_hora_fin = System.currentTimeMillis()))
+                                                userDb.sesionDao().update(currentSession.copy(fecha_hora_fin = System.currentTimeMillis()))
                                             }
                                             
                                             // Stop foreground service
@@ -406,6 +455,27 @@ fun ZepaDetailScreenContent(
                                     )
                                 }
 
+                                if (isPhenologyAlert) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Card(
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                                        border = BorderStroke(1.dp, Color(0xFFEF6C00))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(
+                                                text = "⚠️ Alerta Fenológica: No es común avistar esta especie en la fecha actual según el SDF de la ZEPA. ¿Está seguro de que es correcta?",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFFE65100),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 Row(
@@ -429,7 +499,7 @@ fun ZepaDetailScreenContent(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
                                 ) {
-                                    TextButton(onClick = { selectedSpecies = null; quantity = 1 }) {
+                                    TextButton(onClick = { selectedSpecies = null; quantity = 1; isPhenologyAlert = false }) {
                                         Text("Cambiar")
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -439,7 +509,7 @@ fun ZepaDetailScreenContent(
                                             val sp = selectedSpecies
                                             if (sesId != null && sp != null) {
                                                 coroutineScope.launch(Dispatchers.IO) {
-                                                    val db = DatabaseProvider.getDatabase(context)
+                                                    val userDb = UserDataDatabase.getDatabase(context)
                                                     val avistamiento = AvistamientoEntity(
                                                         id_sesion = sesId,
                                                         id_especie = sp.codigo_n2000,
@@ -447,16 +517,17 @@ fun ZepaDetailScreenContent(
                                                         latitud = 0.0,
                                                         longitud = 0.0,
                                                         cantidad = quantity,
-                                                        alerta_fenologica = false,
-                                                        notas = null
+                                                        alerta_fenologica = isPhenologyAlert,
+                                                        notas = if (isPhenologyAlert) "Alerta fenológica: fuera de época típica" else null
                                                     )
-                                                    db.avistamientoDao().insert(avistamiento)
-                                                    val updatedSightings = db.avistamientoDao().getBySesion(sesId).first()
+                                                    userDb.avistamientoDao().insert(avistamiento)
+                                                    val updatedSightings = userDb.avistamientoDao().getBySesion(sesId).first()
                                                     withContext(Dispatchers.Main) {
                                                         sessionSightings = updatedSightings
                                                         selectedSpecies = null
                                                         quantity = 1
                                                         searchQuery = ""
+                                                        isPhenologyAlert = false
                                                     }
                                                 }
                                             }
@@ -510,7 +581,15 @@ fun ZepaDetailScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    Text(displayCommon, fontWeight = FontWeight.Bold)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(displayCommon, fontWeight = FontWeight.Bold)
+                                        if (av.alerta_fenologica) {
+                                            Badge(containerColor = Color(0xFFEF6C00)) { Text("Fuera de época", color = Color.White, fontSize = 10.sp) }
+                                        }
+                                    }
                                     if (esp?.nombre_comun != null) {
                                         Text(esp.nombre_cientifico, fontSize = 12.sp, fontStyle = FontStyle.Italic)
                                     }

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.censozepa.app.data.local.DatabaseProvider
+import com.censozepa.app.data.local.UserDataDatabase
 import com.censozepa.app.data.local.entity.FavoriteEntity
 import com.censozepa.app.data.local.entity.ZepaEntity
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
 
-// Helper to ignore accents (tildes) and case in search
 fun String.normalizeAccents(): String {
     val normal = Normalizer.normalize(this, Normalizer.Form.NFD)
     return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normal, "")
@@ -50,7 +50,8 @@ fun FavoritesScreenContent(
     fun loadData() {
         coroutineScope.launch(Dispatchers.IO) {
             val db = DatabaseProvider.getDatabase(context)
-            val favs = db.favoriteDao().getAllFavorites().first()
+            val userDb = UserDataDatabase.getDatabase(context)
+            val favs = userDb.favoriteDao().getAllFavorites().first()
             val zepasFav = mutableListOf<ZepaEntity>()
             for (f in favs) {
                 val z = db.zepaDao().getById(f.zepaId)
@@ -143,11 +144,11 @@ fun FavoritesScreenContent(
                                     )
                                     IconButton(onClick = {
                                         coroutineScope.launch(Dispatchers.IO) {
-                                            val db = DatabaseProvider.getDatabase(context)
+                                            val userDb = UserDataDatabase.getDatabase(context)
                                             if (isFav) {
-                                                db.favoriteDao().removeFavorite(zepa.id_codigo)
+                                                userDb.favoriteDao().removeFavorite(zepa.id_codigo)
                                             } else {
-                                                db.favoriteDao().addFavorite(FavoriteEntity(zepa.id_codigo))
+                                                userDb.favoriteDao().addFavorite(FavoriteEntity(zepa.id_codigo))
                                             }
                                             loadData()
                                         }
@@ -205,8 +206,8 @@ fun FavoritesScreenContent(
                                     // Explicit delete favorite button with trash icon
                                     IconButton(onClick = {
                                         coroutineScope.launch(Dispatchers.IO) {
-                                            val db = DatabaseProvider.getDatabase(context)
-                                            db.favoriteDao().removeFavorite(zepa.id_codigo)
+                                            val userDb = UserDataDatabase.getDatabase(context)
+                                            userDb.favoriteDao().removeFavorite(zepa.id_codigo)
                                             loadData()
                                         }
                                     }) {

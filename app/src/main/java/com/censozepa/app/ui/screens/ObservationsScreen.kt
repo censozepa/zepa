@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.censozepa.app.data.local.DatabaseProvider
+import com.censozepa.app.data.local.UserDataDatabase
 import com.censozepa.app.data.local.entity.AvistamientoEntity
 import com.censozepa.app.data.local.entity.EspecieEntity
 import com.censozepa.app.data.local.entity.SesionEntity
@@ -42,11 +43,12 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
     fun loadData() {
         coroutineScope.launch(Dispatchers.IO) {
             val db = DatabaseProvider.getDatabase(context)
-            val loadedSessions = db.sesionDao().getAll().first()
+            val userDb = UserDataDatabase.getDatabase(context)
+            val loadedSessions = userDb.sesionDao().getAll().first()
             val loadedSpecies = db.especieDao().getAll().first()
             val map = mutableMapOf<Int, List<AvistamientoEntity>>()
             for (s in loadedSessions) {
-                map[s.id] = db.avistamientoDao().getBySesion(s.id).first()
+                map[s.id] = userDb.avistamientoDao().getBySesion(s.id).first()
             }
             withContext(Dispatchers.Main) {
                 sessions = loadedSessions
@@ -149,9 +151,9 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
                         sessionToDelete = null
                         if (sToDelete != null) {
                             coroutineScope.launch(Dispatchers.IO) {
-                                val db = DatabaseProvider.getDatabase(context)
-                                db.avistamientoDao().deleteBySesion(sToDelete.id)
-                                db.sesionDao().deleteById(sToDelete.id)
+                                val userDb = UserDataDatabase.getDatabase(context)
+                                userDb.avistamientoDao().deleteBySesion(sToDelete.id)
+                                userDb.sesionDao().deleteById(sToDelete.id)
                                 loadData()
                             }
                         }
