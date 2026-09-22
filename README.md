@@ -2,9 +2,9 @@
 
 ## Capturas de pantalla
 
-|               Menú Principal                |             Conteo ZEPA (ES0000365)              |                Lista Aves                 |
-|:-------------------------------------------:|:------------------------------------------------:|:-----------------------------------------:|
-| ![Splash Screen](docs/screenshots/menu.png) | ![Menú Principal](docs/screenshots/contador.png) | ![Conteo ZEPA](docs/screenshots/list.png) |
+| Menú Principal | Conteo ZEPA (ES0000365) | Lista Aves |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/menu.png" width="240" /> | <img src="docs/screenshots/contador.png" width="240" /> | <img src="docs/screenshots/list.png" width="240" /> |
 
 ---
 
