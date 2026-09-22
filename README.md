@@ -78,3 +78,23 @@ La opción **"ZEPAs Cercanas"** del menú principal permite al ornitólogo local
    En tiempo real, la app obtiene la ubicación GPS del dispositivo (con un filtro de validación del bounding box de España) y calcula la distancia de círculo máximo mediante la **fórmula matemática de Haversine** implementada nativamente en Kotlin:
    $$\text{Haversine}(d) = 2r \cdot \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)}\right)$$
    Esto devuelve distancias precisas (en metros si es menor a 1 km, o en kilómetros con un decimal si es superior) ordenadas de menor a mayor.
+
+## License
+
+CensoZEPA is licensed under the GNU GENERAL PUBLIC LICENSE GPLv3.
+
+For additional information, see the LICENSE and NOTICE files.
+
+---
+<sub>
+    GNU GENERAL PUBLIC LICENSE
+<sub>
+                           Version 3, 29 June 2007
+
+     Copyright (C) 2007 Free Software Foundation, Inc. 
+<sub>
+<https://fsf.org/>
+
+<sub>
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
