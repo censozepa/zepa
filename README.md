@@ -87,14 +87,10 @@ For additional information, see the LICENSE and NOTICE files.
 
 ---
 <sub>
-    GNU GENERAL PUBLIC LICENSE
-<sub>
-                           Version 3, 29 June 2007
 
-     Copyright (C) 2007 Free Software Foundation, Inc. 
-<sub>
-<https://fsf.org/>
+Licensed under the GNU General Public License, version 3: https://www.gnu.org/licenses/gpl-3.0.html
 
-<sub>
-     Everyone is permitted to copy and distribute verbatim copies
-     of this license document, but changing it is not allowed.
+<sub>  
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the license above, shall be
+licensed as above, without any additional terms or conditions.
