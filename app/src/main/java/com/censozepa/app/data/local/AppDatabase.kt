@@ -15,7 +15,7 @@ import com.censozepa.app.data.local.entity.*
         AvistamientoEntity::class,
         FavoriteEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

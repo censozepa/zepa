@@ -96,4 +96,7 @@ dependencies {
 
   // Coil for image loading
   implementation("io.coil-kt:coil-compose:2.7.0")
+
+  // Google Auth for Drive integration
+  implementation("com.google.android.gms:play-services-auth:21.2.0")
 }
