@@ -18,6 +18,7 @@ import com.censozepa.app.ui.navigation.BirdListScreen
 import com.censozepa.app.ui.navigation.BirdMenuScreen
 import com.censozepa.app.ui.navigation.CcaaListScreen
 import com.censozepa.app.ui.navigation.FavoritesScreen
+import com.censozepa.app.ui.navigation.GoogleDriveSyncScreen
 import com.censozepa.app.ui.navigation.MainMenuScreen
 import com.censozepa.app.ui.navigation.NearbyZepasScreen
 import com.censozepa.app.ui.navigation.ObservationsScreen
@@ -30,6 +31,7 @@ import com.censozepa.app.ui.screens.BirdListScreenContent
 import com.censozepa.app.ui.screens.BirdMenuScreenContent
 import com.censozepa.app.ui.screens.CcaaListScreenContent
 import com.censozepa.app.ui.screens.FavoritesScreenContent
+import com.censozepa.app.ui.screens.GoogleDriveSyncScreenContent
 import com.censozepa.app.ui.screens.MainMenuScreenContent
 import com.censozepa.app.ui.screens.NearbyZepasScreenContent
 import com.censozepa.app.ui.screens.ObservationsScreenContent
@@ -173,9 +175,16 @@ fun CensoZepaApp(initialZepaId: String? = null) {
             )
         }
 
+        composable<GoogleDriveSyncScreen> {
+            GoogleDriveSyncScreenContent(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable<SettingsScreen> {
             SettingsScreenContent(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onOpenGoogleDriveSync = { navController.navigate(GoogleDriveSyncScreen) }
             )
         }
     }

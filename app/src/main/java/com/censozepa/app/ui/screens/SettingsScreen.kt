@@ -11,15 +11,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreenContent(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenGoogleDriveSync: () -> Unit
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
@@ -51,11 +50,7 @@ fun SettingsScreenContent(
                     Text("Sincroniza y exporta tus muestreos de avistamientos hacia Google Drive.", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Exportación a Google Drive simulada con éxito.")
-                            }
-                        },
+                        onClick = onOpenGoogleDriveSync,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Filled.CloudUpload, contentDescription = null)

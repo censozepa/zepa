@@ -36,4 +36,7 @@ object ZepaSelectorForBirdsScreen
 data class ZepaBirdsListScreen(val zepaId: String, val zepaName: String)
 
 @Serializable
+object GoogleDriveSyncScreen
+
+@Serializable
 object SettingsScreen

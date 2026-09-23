@@ -10,5 +10,6 @@ data class SesionEntity(
     val fecha_hora_inicio: Long,
     val fecha_hora_fin: Long?,
     val distancia_recorrida: Double?,
-    val track_gps_json: String?
+    val track_gps_json: String?,
+    val sincronizado: Boolean = false
 )
