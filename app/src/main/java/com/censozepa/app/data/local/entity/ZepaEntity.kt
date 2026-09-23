@@ -14,5 +14,6 @@ data class ZepaEntity(
     val bounding_box: String?,
     @ColumnInfo(name = "path_mapa_offline") val pathMapaOffline: String?,
     val lat: Double?,
-    val lon: Double?
+    val lon: Double?,
+    val localidad: String?
 )
