@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -104,7 +106,12 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("Jornada #${session.id} (ZEPA: ${session.id_zepa})", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text("Jornada #${session.id} (ZEPA: ${session.id_zepa})", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text("Inicio: ${Date(session.fecha_hora_inicio)}", fontSize = 12.sp, color = Color.Gray)
                                     if (session.fecha_hora_fin != null) {
@@ -113,10 +120,23 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
                                         Text("Estado: En curso", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
-                                IconButton(onClick = {
-                                    sessionToDelete = session
-                                }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Borrar registro", tint = MaterialTheme.colorScheme.error)
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    // Sync indicator icon
+                                    Icon(
+                                        imageVector = if (session.sincronizado) Icons.Filled.CloudDone else Icons.Filled.CloudOff,
+                                        contentDescription = if (session.sincronizado) "Sincronizado con Google Drive" else "Pendiente de sincronizar con Google Drive",
+                                        tint = if (session.sincronizado) Color(0xFF2E7D32) else Color(0xFFEF6C00),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    IconButton(onClick = {
+                                        sessionToDelete = session
+                                    }) {
+                                        Icon(Icons.Filled.Delete, contentDescription = "Borrar registro", tint = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             }
                             
@@ -138,12 +158,22 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
         }
     }
 
-    // Delete Confirmation Dialog
+    // Smart Delete Confirmation Dialog with Sync Check
     if (sessionToDelete != null) {
+        val isSynced = sessionToDelete!!.sincronizado
         AlertDialog(
             onDismissRequest = { sessionToDelete = null },
-            title = { Text("¿Eliminar observación?") },
-            text = { Text("¿Estás seguro de que deseas eliminar la Jornada #${sessionToDelete!!.id} y todos sus avistamientos asociados? Esta acción no se puede deshacer.") },
+            title = {
+                Text(if (isSynced) "🗑️ Borrar muestreo sincronizado" else "⚠️ ¡Atención! Muestreo no sincronizado")
+            },
+            text = {
+                Text(
+                    if (isSynced)
+                        "Este muestreo (Jornada #${sessionToDelete!!.id}) ya ha sido sincronizado con Google Drive. Puedes borrarlo con total seguridad pues sus datos están respaldados en la nube."
+                    else
+                        "¡Este muestreo (Jornada #${sessionToDelete!!.id}) NO ha sido sincronizado todavía con Google Drive! Si lo borras ahora, los datos se perderán de este dispositivo sin haber sido respaldados en la nube. ¿Estás seguro de continuar?"
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -158,9 +188,9 @@ fun ObservationsScreenContent(onBack: () -> Unit) {
                             }
                         }
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.textButtonColors(contentColor = if (isSynced) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Eliminar")
+                    Text(if (isSynced) "Sí, borrar" else "Borrar de todos modos")
                 }
             },
             dismissButton = {
