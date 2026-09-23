@@ -177,7 +177,12 @@ fun CensoZepaApp(initialZepaId: String? = null) {
 
         composable<GoogleDriveSyncScreen> {
             GoogleDriveSyncScreenContent(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onHome = {
+                    navController.navigate(MainMenuScreen) {
+                        popUpTo<MainMenuScreen> { inclusive = false }
+                    }
+                }
             )
         }
 
