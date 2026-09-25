@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.censozepa.app.data.local.DatabaseProvider
 import com.censozepa.app.data.local.UserDataDatabase
@@ -107,6 +108,9 @@ fun ZepaDetailScreenContent(
     
     // Dialog states
     var showSightingsDialog by remember { mutableStateOf(false) }
+    var expandedImageAsset by remember { mutableStateOf<String?>(null) }
+    var expandedImageDesc by remember { mutableStateOf<String?>(null) }
+    var expandedImageSciName by remember { mutableStateOf<String?>(null) }
 
     // Notification permission launcher for Android 13+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -418,7 +422,12 @@ fun ZepaDetailScreenContent(
                                                 contentDescription = common ?: especie.nombre_cientifico,
                                                 modifier = Modifier
                                                     .size(48.dp)
-                                                    .clip(RoundedCornerShape(8.dp)),
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .clickable {
+                                                        expandedImageAsset = assetPath
+                                                        expandedImageDesc = common ?: especie.nombre_cientifico
+                                                        expandedImageSciName = especie.nombre_cientifico
+                                                    },
                                                 contentScale = ContentScale.Crop
                                             )
                                         }
@@ -606,5 +615,51 @@ fun ZepaDetailScreenContent(
                 }
             }
         )
+    }
+
+    // Expanded Image Viewer Dialog
+    if (expandedImageAsset != null) {
+        Dialog(onDismissRequest = { expandedImageAsset = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    AsyncImage(
+                        model = "file:///android_asset/$expandedImageAsset",
+                        contentDescription = expandedImageDesc,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = expandedImageDesc ?: "",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (expandedImageSciName != null && expandedImageSciName != expandedImageDesc) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = expandedImageSciName ?: "",
+                            fontSize = 14.sp,
+                            fontStyle = FontStyle.Italic,
+                            color = Color.Gray
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { expandedImageAsset = null }) {
+                        Text("Cerrar")
+                    }
+                }
+            }
+        }
     }
 }

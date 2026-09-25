@@ -1,5 +1,6 @@
 package com.censozepa.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -18,6 +20,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.censozepa.app.data.local.DatabaseProvider
 import com.censozepa.app.data.local.entity.EspecieEntity
@@ -34,6 +37,10 @@ fun ZepaBirdsListScreenContent(
     val context = LocalContext.current
     var speciesList by remember { mutableStateOf<List<EspecieEntity>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+
+    var expandedImageAsset by remember { mutableStateOf<String?>(null) }
+    var expandedImageDesc by remember { mutableStateOf<String?>(null) }
+    var expandedImageSciName by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(zepaId) {
         withContext(Dispatchers.IO) {
@@ -110,7 +117,12 @@ fun ZepaBirdsListScreenContent(
                                         contentDescription = common ?: especie.nombre_cientifico,
                                         modifier = Modifier
                                             .size(52.dp)
-                                            .clip(RoundedCornerShape(8.dp)),
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                expandedImageAsset = assetPath
+                                                expandedImageDesc = common ?: especie.nombre_cientifico
+                                                expandedImageSciName = especie.nombre_cientifico
+                                            },
                                         contentScale = ContentScale.Crop
                                     )
                                 } else {
@@ -126,6 +138,51 @@ fun ZepaBirdsListScreenContent(
                                 }
                             }
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    if (expandedImageAsset != null) {
+        Dialog(onDismissRequest = { expandedImageAsset = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    AsyncImage(
+                        model = "file:///android_asset/$expandedImageAsset",
+                        contentDescription = expandedImageDesc,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = expandedImageDesc ?: "",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (expandedImageSciName != null && expandedImageSciName != expandedImageDesc) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = expandedImageSciName ?: "",
+                            fontSize = 14.sp,
+                            fontStyle = FontStyle.Italic,
+                            color = Color.Gray
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { expandedImageAsset = null }) {
+                        Text("Cerrar")
                     }
                 }
             }
