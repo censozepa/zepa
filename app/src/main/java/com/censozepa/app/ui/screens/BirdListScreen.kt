@@ -25,7 +25,9 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.censozepa.app.data.local.DatabaseProvider
 import com.censozepa.app.data.local.entity.EspecieEntity
+import com.censozepa.app.data.local.entity.ZepaEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +36,7 @@ fun BirdListScreenContent(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var speciesList by remember { mutableStateOf<List<EspecieEntity>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
@@ -41,6 +44,10 @@ fun BirdListScreenContent(
     var expandedImageAsset by remember { mutableStateOf<String?>(null) }
     var expandedImageDesc by remember { mutableStateOf<String?>(null) }
     var expandedImageSciName by remember { mutableStateOf<String?>(null) }
+
+    var expandedZepasEspecie by remember { mutableStateOf<EspecieEntity?>(null) }
+    var zepasListForEspecie by remember { mutableStateOf<List<ZepaEntity>>(emptyList()) }
+    var isLoadingZepas by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -104,7 +111,20 @@ fun BirdListScreenContent(
                     items(filteredSpecies) { especie ->
                         val common = especie.nombre_comun
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    expandedZepasEspecie = especie
+                                    isLoadingZepas = true
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        val db = DatabaseProvider.getDatabase(context)
+                                        val zepas = db.zepaDao().getZepasForEspecie(especie.codigo_n2000)
+                                        withContext(Dispatchers.Main) {
+                                            zepasListForEspecie = zepas
+                                            isLoadingZepas = false
+                                        }
+                                    }
+                                },
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
                             ListItem(
@@ -208,5 +228,63 @@ fun BirdListScreenContent(
                 }
             }
         }
+    }
+
+    if (expandedZepasEspecie != null) {
+        val especie = expandedZepasEspecie!!
+        AlertDialog(
+            onDismissRequest = { expandedZepasEspecie = null },
+            title = {
+                val common = especie.nombre_comun
+                Text(
+                    text = "ZEPAs con ${common ?: especie.nombre_cientifico}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                if (isLoadingZepas) {
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else if (zepasListForEspecie.isEmpty()) {
+                    Text("Esta especie no está catalogada en ninguna ZEPA o no hay datos fenológicos disponibles.", fontSize = 14.sp)
+                } else {
+                    Column {
+                        Text(
+                            text = "Catalogada en ${zepasListForEspecie.size} ZEPAs:",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 350.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(zepasListForEspecie) { zepa ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(text = zepa.nombre, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(text = "ID ZEPA: ${zepa.id_codigo}", fontSize = 12.sp, color = Color.Gray)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { expandedZepasEspecie = null }) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 }
