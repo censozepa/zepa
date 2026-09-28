@@ -461,9 +461,8 @@ fun ZepaDetailScreenContent(
                                                 }
 
                                                 Surface(
-                                                    modifier = Modifier
-                                                        .padding(end = 12.dp)
-                                                        .clickable { showSdfDialogForEspecie = especie },
+                                                    onClick = { showSdfDialogForEspecie = especie },
+                                                    modifier = Modifier.padding(end = 12.dp),
                                                     shape = RoundedCornerShape(8.dp),
                                                     color = bgColor,
                                                     border = BorderStroke(1.dp, fgColor.copy(alpha = 0.5f))
@@ -848,6 +847,104 @@ fun ZepaDetailScreenContent(
                 }
             }
         }
+    }
+
+    // SDF Info Dialog
+    if (showSdfDialogForEspecie != null) {
+        val especie = showSdfDialogForEspecie!!
+        val fen = fenologiaMap[especie.codigo_n2000]
+        AlertDialog(
+            onDismissRequest = { showSdfDialogForEspecie = null },
+            title = {
+                Text(
+                    text = "Datos SDF: ${especie.nombre_comun ?: especie.nombre_cientifico}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                if (fen == null) {
+                    Text("No hay datos SDF para esta especie en esta ZEPA.")
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val presCode = extractTipoPresencia(fen)
+                        val abCode = extractAbundancia(fen)
+                        val uniCode = extractUnidades(fen)
+                        val calCode = extractCalidadDatos(fen)
+                        val consCode = extractEstadoConservacion(fen)
+
+                        // 1. Tipo de Presencia
+                        item {
+                            Text("Tipo de Presencia", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (presCode) {
+                                "p" -> "p — Residente / Permanente (Resident)\nPoblación presente de forma estable y continuada durante todo el año."
+                                "r" -> "r — Reproductor (Reproducing)\nPoblación presente durante la época reproductora (nidificación y cría)."
+                                "w" -> "w — Invernante (Wintering)\nPoblación presente durante la temporada de invernada fuera de la época de cría."
+                                "c" -> "c — Concentración / Paso (Concentrating)\nPoblación en paso migratorio, escala de descanso o concentraciones temporales."
+                                else -> "No asignado"
+                            }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+
+                        // 2. Abundancia Relativa
+                        item {
+                            Text("Abundancia Relativa", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (abCode) {
+                                "C" -> "C — Común (Common)\nEspecie habitual y frecuente en los hábitats propicios del espacio."
+                                "R" -> "R — Rara (Rare)\nEspecie presente con baja densidad o en escaso número."
+                                "V" -> "V — Muy rara (Very rare)\nEspecie de presencia excepcional, accidental o muy localizada."
+                                "P" -> "P — Presente (Present)\nPresencia confirmada en el espacio pero con población no cuantificada."
+                                else -> "No asignada"
+                            }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+
+                        // 3. Unidades de Población
+                        item {
+                            Text("Unidades de Población", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (uniCode) {
+                                "p" -> "p — Parejas (Pairs)\nNúmero de parejas reproductoras censadas o estimadas en la ZEPA."
+                                "i" -> "i — Individuos (Individuals)\nNúmero de ejemplares censados (habitual en invernada o aves no coloniales)."
+                                "cmales" -> "cmales — Machos cantores (Calling males)\nMachos detectados en actividad territorial."
+                                else -> "No asignada"
+                            }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+
+                        // 4. Calidad de los Datos
+                        item {
+                            Text("Calidad de los Datos", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (calCode) {
+                                "G" -> "G — Buena (Good)\nBasada en censos exhaustivos, metodología contrastada y estudios recientes."
+                                "M" -> "M — Moderada (Moderate)\nBasada en censos parciales, muestreos limitados o extrapolaciones fundadas."
+                                "P" -> "P — Pobre (Poor)\nBasada en estimaciones cualitativas rudimentarias o conjeturas de expertos."
+                                "DD" -> "DD — Datos Deficientes (Data Deficient)\nSin datos cuantitativos fiables ni información numérica disponible."
+                                else -> "No evaluada"
+                            }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+
+                        // 5. Estado de Conservación
+                        item {
+                            Text("Estado de Conservación", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (consCode) {
+                                "A" -> "A — Excelente (Excellent)\nConservación excelente de la población y los elementos clave de su hábitat."
+                                "B" -> "B — Buena (Good)\nBuena conservación con perspectivas favorables y estructura adecuada."
+                                "C" -> "C — Media / Significativa (Average)\nConservación media o reducida, pero con presencia significativa para la ZEPA."
+                                "D" -> "D — No significativa (Non-significant)\nPresencia marginal no significativa para la valoración del espacio."
+                                else -> if (!fen.categoria.isNullOrBlank()) "Directiva / Categoría legal: ${fen.categoria}" else "No asignado"
+                            }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSdfDialogForEspecie = null }) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 }
 
