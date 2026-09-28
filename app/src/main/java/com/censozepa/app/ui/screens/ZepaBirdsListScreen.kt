@@ -119,19 +119,14 @@ fun ZepaBirdsListScreenContent(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     val fen = fenologiaMap[especie.codigo_n2000]
                                     if (fen != null) {
-                                        val statuses = listOfNotNull(
-                                            fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
-                                            fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
-                                            fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
-                                        ).map { it.trim() }.toSet()
-
-                                        val (bgColor, fgColor) = when {
-                                            statuses.contains("p") || statuses.contains("R") -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // Verde (Residente)
-                                            statuses.contains("r") || statuses.contains("V") -> Color(0xFFFFF3E0) to Color(0xFFEF6C00) // Naranja (Reproductor)
-                                            statuses.contains("w") || statuses.contains("I") -> Color(0xFFE3F2FD) to Color(0xFF1565C0) // Azul (Invernante)
-                                            statuses.contains("c") || statuses.contains("P") -> Color(0xFFFFF8E1) to Color(0xFFF57F17) // Amarillo (Paso)
-                                            else -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-                                        }
+                                                val presCode = extractTipoPresencia(fen)
+                                                val (bgColor, fgColor) = when (presCode) {
+                                                    "p" -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // Verde (Residente / Permanente)
+                                                    "r" -> Color(0xFFFFF9C4) to Color(0xFFF57F17) // Amarillo (Reproductor / Estival)
+                                                    "w" -> Color(0xFFE3F2FD) to Color(0xFF1565C0) // Azul (Invernante)
+                                                    "c" -> Color(0xFFF3E5F5) to Color(0xFF6A1B9A) // Morado (Migratoria / Paso)
+                                                    else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                                                }
 
                                         Surface(
                                             modifier = Modifier
@@ -248,69 +243,74 @@ fun ZepaBirdsListScreenContent(
                     Text("No hay datos SDF para esta especie en esta ZEPA.")
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        val monthCodes = listOfNotNull(
-                            fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
-                            fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
-                            fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
-                        ).filter { it.isNotBlank() && it != "-" }.map { it.trim() }.toSet()
+                        val presCode = extractTipoPresencia(fen)
+                        val abCode = extractAbundancia(fen)
+                        val uniCode = extractUnidades(fen)
+                        val calCode = extractCalidadDatos(fen)
+                        val consCode = extractEstadoConservacion(fen)
 
-                        val phenologyCodes = monthCodes.filter { it == "p" || it == "r" || it == "w" || it == "c" }
-                        val abundanciaVal = fen.abundancia?.trim()
-                        val abundanceCodes = (monthCodes + listOfNotNull(abundanciaVal)).filter { it == "C" || it == "R" || it == "V" || it == "P" }.toSet()
-                        val catVal = fen.categoria?.trim()
-                        val extraCodes = (monthCodes.filterNot { it in setOf("p", "r", "w", "c", "C", "R", "V", "P") } + listOfNotNull(catVal)).filter { it.isNotBlank() && it != "-" }.toSet()
-
-                        if (phenologyCodes.isNotEmpty()) {
-                            item {
-                                Text("Fenología Oficial (MITECO)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                phenologyCodes.forEach { code ->
-                                    val desc = when (code) {
-                                        "p" -> "Residente (p) - Población presente de forma estable todo el año."
-                                        "r" -> "Reproductor (r) - Población presente durante la época reproductora."
-                                        "w" -> "Invernante (w) - Población presente durante la temporada de invernada."
-                                        "c" -> "Concentración / Paso (c) - Población en paso migratorio o descanso."
-                                        else -> ""
-                                    }
-                                    Text("• $desc", fontSize = 14.sp)
-                                }
+                        // 1. Tipo de Presencia
+                        item {
+                            Text("Tipo de Presencia", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (presCode) {
+                                "p" -> "p — Residente / Permanente (Resident)\nPoblación presente de forma estable y continuada durante todo el año."
+                                "r" -> "r — Reproductor (Reproducing)\nPoblación presente durante la época reproductora (nidificación y cría)."
+                                "w" -> "w — Invernante (Wintering)\nPoblación presente durante la temporada de invernada fuera de la época de cría."
+                                "c" -> "c — Concentración / Paso (Concentrating)\nPoblación en paso migratorio, escala de descanso o concentraciones temporales."
+                                else -> "No asignado"
                             }
+                            Text("• $text", fontSize = 13.sp)
                         }
 
-                        if (abundanceCodes.isNotEmpty()) {
-                            item {
-                                Text("Abundancia Relativa", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                abundanceCodes.forEach { code ->
-                                    val desc = when (code) {
-                                        "C" -> "Común (C) - Habitual y frecuente."
-                                        "R" -> "Rara (R) - Baja densidad o escaso número."
-                                        "V" -> "Muy rara (V) - Excepcional o muy localizada."
-                                        "P" -> "Presente (P) - Presencia confirmada, población no cuantificada."
-                                        else -> ""
-                                    }
-                                    Text("• $desc", fontSize = 14.sp)
-                                }
+                        // 2. Abundancia Relativa
+                        item {
+                            Text("Abundancia Relativa", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (abCode) {
+                                "C" -> "C — Común (Common)\nEspecie habitual y frecuente en los hábitats propicios del espacio."
+                                "R" -> "R — Rara (Rare)\nEspecie presente con baja densidad o en escaso número."
+                                "V" -> "V — Muy rara (Very rare)\nEspecie de presencia excepcional, accidental o muy localizada."
+                                "P" -> "P — Presente (Present)\nPresencia confirmada en el espacio pero con población no cuantificada."
+                                else -> "No asignada"
                             }
+                            Text("• $text", fontSize = 13.sp)
                         }
 
-                        if (extraCodes.isNotEmpty()) {
-                            item {
-                                Text("Otros Códigos / Categoría", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                extraCodes.forEach { code ->
-                                    val desc = when (code) {
-                                        "G" -> "Buena Calidad (G) - Basada en censos exhaustivos."
-                                        "M" -> "Moderada (M) - Basada en censos parciales."
-                                        "DD" -> "Datos Deficientes (DD) - Sin datos cuantitativos."
-                                        "A" -> "Excelente (A) - Conservación excelente."
-                                        "B" -> "Buena (B) - Buena conservación."
-                                        "D" -> "No significativa (D) - Presencia marginal."
-                                        "i" -> "Individuos (i) - Número de ejemplares."
-                                        "cmales" -> "Machos cantores (cmales) - Machos detectados territoriales."
-                                        "I" -> "Invernante (I) - [Código alternativo/antiguo]"
-                                        else -> code
-                                    }
-                                    Text("• $desc", fontSize = 14.sp)
-                                }
+                        // 3. Unidades de Población
+                        item {
+                            Text("Unidades de Población", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (uniCode) {
+                                "p" -> "p — Parejas (Pairs)\nNúmero de parejas reproductoras censadas o estimadas en la ZEPA."
+                                "i" -> "i — Individuos (Individuals)\nNúmero de ejemplares censados (habitual en invernada o aves no coloniales)."
+                                "cmales" -> "cmales — Machos cantores (Calling males)\nMachos detectados en actividad territorial."
+                                else -> "No asignada"
                             }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+
+                        // 4. Calidad de los Datos
+                        item {
+                            Text("Calidad de los Datos", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (calCode) {
+                                "G" -> "G — Buena (Good)\nBasada en censos exhaustivos, metodología contrastada y estudios recientes."
+                                "M" -> "M — Moderada (Moderate)\nBasada en censos parciales, muestreos limitados o extrapolaciones fundadas."
+                                "P" -> "P — Pobre (Poor)\nBasada en estimaciones cualitativas rudimentarias o conjeturas de expertos."
+                                "DD" -> "DD — Datos Deficientes (Data Deficient)\nSin datos cuantitativos fiables ni información numérica disponible."
+                                else -> "No evaluada"
+                            }
+                            Text("• $text", fontSize = 13.sp)
+                        }
+
+                        // 5. Estado de Conservación
+                        item {
+                            Text("Estado de Conservación", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            val text = when (consCode) {
+                                "A" -> "A — Excelente (Excellent)\nConservación excelente de la población y los elementos clave de su hábitat."
+                                "B" -> "B — Buena (Good)\nBuena conservación con perspectivas favorables y estructura adecuada."
+                                "C" -> "C — Media / Significativa (Average)\nConservación media o reducida, pero con presencia significativa para la ZEPA."
+                                "D" -> "D — No significativa (Non-significant)\nPresencia marginal no significativa para la valoración del espacio."
+                                else -> if (!fen.categoria.isNullOrBlank()) "Directiva / Categoría legal: ${fen.categoria}" else "No asignado"
+                            }
+                            Text("• $text", fontSize = 13.sp)
                         }
                     }
                 }
