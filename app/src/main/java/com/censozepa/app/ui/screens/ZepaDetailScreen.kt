@@ -830,8 +830,10 @@ fun extractAbundancia(fen: FenologiaZepaEntity): String? {
 
 fun extractUnidades(fen: FenologiaZepaEntity): String? {
     val candidateCat = fen.categoria?.trim()
-    if (candidateCat != null && candidateCat in setOf("p", "i", "cmales")) {
-        return candidateCat
+    if (candidateCat != null) {
+        val tokens = candidateCat.split(",").map { it.trim() }
+        val found = tokens.firstOrNull { it in setOf("p", "i", "cmales") }
+        if (found != null) return found
     }
     val candidateAb = fen.abundancia?.trim()
     if (candidateAb != null && candidateAb in setOf("p", "i", "cmales")) {
@@ -842,16 +844,20 @@ fun extractUnidades(fen: FenologiaZepaEntity): String? {
 
 fun extractCalidadDatos(fen: FenologiaZepaEntity): String? {
     val candidateCat = fen.categoria?.trim()
-    if (candidateCat != null && candidateCat in setOf("G", "M", "P", "DD")) {
-        return candidateCat
+    if (candidateCat != null) {
+        val tokens = candidateCat.split(",").map { it.trim() }
+        val found = tokens.firstOrNull { it in setOf("G", "M", "P", "DD") }
+        if (found != null) return found
     }
     return null
 }
 
 fun extractEstadoConservacion(fen: FenologiaZepaEntity): String? {
     val candidateCat = fen.categoria?.trim()
-    if (candidateCat != null && candidateCat in setOf("A", "B", "C", "D")) {
-        return candidateCat
+    if (candidateCat != null) {
+        val tokens = candidateCat.split(",").map { it.trim() }
+        val found = tokens.firstOrNull { it in setOf("A", "B", "C", "D") }
+        if (found != null) return found
     }
     return null
 }
