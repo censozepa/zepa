@@ -23,6 +23,7 @@ interface EspecieDao {
         FROM especie e
         JOIN fenologia_zepa f ON e.codigo_n2000 = f.id_especie
         WHERE f.id_zepa = :zepaId
+        GROUP BY e.codigo_n2000
     """)
     suspend fun getSpeciesForZepa(zepaId: String): List<EspecieEntity>
 
