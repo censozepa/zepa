@@ -424,20 +424,34 @@ fun ZepaDetailScreenContent(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             val fen = fenologiaMap[especie.codigo_n2000]
                                             if (fen != null) {
+                                                val statuses = listOfNotNull(
+                                                    fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
+                                                    fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
+                                                    fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
+                                                ).map { it.trim() }.toSet()
+
+                                                val (bgColor, fgColor) = when {
+                                                    statuses.contains("p") || statuses.contains("R") -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // Verde (Residente)
+                                                    statuses.contains("r") || statuses.contains("V") -> Color(0xFFFFF3E0) to Color(0xFFEF6C00) // Naranja (Reproductor)
+                                                    statuses.contains("w") || statuses.contains("I") -> Color(0xFFE3F2FD) to Color(0xFF1565C0) // Azul (Invernante)
+                                                    statuses.contains("c") || statuses.contains("P") -> Color(0xFFFFF8E1) to Color(0xFFF57F17) // Amarillo (Paso)
+                                                    else -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+                                                }
+
                                                 Surface(
                                                     modifier = Modifier
                                                         .padding(end = 12.dp)
                                                         .clickable { showSdfDialogForEspecie = especie },
-                                                    shape = RoundedCornerShape(4.dp),
-                                                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary)
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = bgColor,
+                                                    border = BorderStroke(1.dp, fgColor.copy(alpha = 0.5f))
                                                 ) {
                                                     Text(
                                                         text = "SDF",
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                        fontSize = 11.sp,
+                                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                                        fontSize = 13.sp,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                        color = fgColor
                                                     )
                                                 }
                                             }
@@ -713,7 +727,7 @@ fun ZepaDetailScreenContent(
                             fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
                             fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
                             fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
-                        ).filter { it.isNotBlank() && it != "-" }.map { it.lowercase() }.toSet()
+                        ).filter { it.isNotBlank() && it != "-" }.map { it.lowercase().trim() }.toSet()
 
                         if (statuses.isNotEmpty()) {
                             item {
@@ -746,11 +760,10 @@ fun ZepaDetailScreenContent(
                             }
                         }
 
-                        // Categoría (Data Quality or Conservation, depending on how DB is mapped, usually we just show it)
+                        // Categoría
                         if (!fen.categoria.isNullOrBlank() && fen.categoria != "-") {
                             item {
                                 Text("Otros Códigos (Categoría)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                // We check if it matches Quality or Conservation
                                 val desc = when (fen.categoria.uppercase()) {
                                     "G" -> "Buena Calidad (G) - Basada en censos exhaustivos."
                                     "M" -> "Moderada (M) - Basada en censos parciales."

@@ -119,20 +119,34 @@ fun ZepaBirdsListScreenContent(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     val fen = fenologiaMap[especie.codigo_n2000]
                                     if (fen != null) {
+                                        val statuses = listOfNotNull(
+                                            fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
+                                            fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
+                                            fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
+                                        ).map { it.trim() }.toSet()
+
+                                        val (bgColor, fgColor) = when {
+                                            statuses.contains("p") || statuses.contains("R") -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // Verde (Residente)
+                                            statuses.contains("r") || statuses.contains("V") -> Color(0xFFFFF3E0) to Color(0xFFEF6C00) // Naranja (Reproductor)
+                                            statuses.contains("w") || statuses.contains("I") -> Color(0xFFE3F2FD) to Color(0xFF1565C0) // Azul (Invernante)
+                                            statuses.contains("c") || statuses.contains("P") -> Color(0xFFFFF8E1) to Color(0xFFF57F17) // Amarillo (Paso)
+                                            else -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+                                        }
+
                                         Surface(
                                             modifier = Modifier
                                                 .padding(end = 12.dp)
                                                 .clickable { showSdfDialogForEspecie = especie },
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary)
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = bgColor,
+                                            border = BorderStroke(1.dp, fgColor.copy(alpha = 0.5f))
                                         ) {
                                             Text(
                                                 text = "SDF",
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                fontSize = 11.sp,
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                                fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                color = fgColor
                                             )
                                         }
                                     }
@@ -234,62 +248,68 @@ fun ZepaBirdsListScreenContent(
                     Text("No hay datos SDF para esta especie en esta ZEPA.")
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Phenology (Estatus)
-                        val statuses = listOfNotNull(
+                        val monthCodes = listOfNotNull(
                             fen.estatus_ene, fen.estatus_feb, fen.estatus_mar, fen.estatus_abr,
                             fen.estatus_may, fen.estatus_jun, fen.estatus_jul, fen.estatus_ago,
                             fen.estatus_sep, fen.estatus_oct, fen.estatus_nov, fen.estatus_dic
-                        ).filter { it.isNotBlank() && it != "-" }.map { it.lowercase() }.toSet()
+                        ).filter { it.isNotBlank() && it != "-" }.map { it.trim() }.toSet()
 
-                        if (statuses.isNotEmpty()) {
+                        val phenologyCodes = monthCodes.filter { it == "p" || it == "r" || it == "w" || it == "c" }
+                        val abundanciaVal = fen.abundancia?.trim()
+                        val abundanceCodes = (monthCodes + listOfNotNull(abundanciaVal)).filter { it == "C" || it == "R" || it == "V" || it == "P" }.toSet()
+                        val catVal = fen.categoria?.trim()
+                        val extraCodes = (monthCodes.filterNot { it in setOf("p", "r", "w", "c", "C", "R", "V", "P") } + listOfNotNull(catVal)).filter { it.isNotBlank() && it != "-" }.toSet()
+
+                        if (phenologyCodes.isNotEmpty()) {
                             item {
-                                Text("Fenología / Categoría Oficial", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                statuses.forEach { code ->
+                                Text("Fenología Oficial (MITECO)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                phenologyCodes.forEach { code ->
                                     val desc = when (code) {
                                         "p" -> "Residente (p) - Población presente de forma estable todo el año."
                                         "r" -> "Reproductor (r) - Población presente durante la época reproductora."
                                         "w" -> "Invernante (w) - Población presente durante la temporada de invernada."
                                         "c" -> "Concentración / Paso (c) - Población en paso migratorio o descanso."
-                                        else -> "Código: $code"
+                                        else -> ""
                                     }
                                     Text("• $desc", fontSize = 14.sp)
                                 }
                             }
                         }
 
-                        // Abundancia
-                        if (!fen.abundancia.isNullOrBlank() && fen.abundancia != "-") {
+                        if (abundanceCodes.isNotEmpty()) {
                             item {
                                 Text("Abundancia Relativa", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                val desc = when (fen.abundancia.uppercase()) {
-                                    "C" -> "Común (C) - Habitual y frecuente."
-                                    "R" -> "Rara (R) - Baja densidad o escaso número."
-                                    "V" -> "Muy rara (V) - Excepcional o muy localizada."
-                                    "P" -> "Presente (P) - Presencia confirmada, población no cuantificada."
-                                    else -> "Código: ${fen.abundancia}"
+                                abundanceCodes.forEach { code ->
+                                    val desc = when (code) {
+                                        "C" -> "Común (C) - Habitual y frecuente."
+                                        "R" -> "Rara (R) - Baja densidad o escaso número."
+                                        "V" -> "Muy rara (V) - Excepcional o muy localizada."
+                                        "P" -> "Presente (P) - Presencia confirmada, población no cuantificada."
+                                        else -> ""
+                                    }
+                                    Text("• $desc", fontSize = 14.sp)
                                 }
-                                Text("• $desc", fontSize = 14.sp)
                             }
                         }
 
-                        // Categoría
-                        if (!fen.categoria.isNullOrBlank() && fen.categoria != "-") {
+                        if (extraCodes.isNotEmpty()) {
                             item {
-                                Text("Otros Códigos (Categoría)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                val desc = when (fen.categoria.uppercase()) {
-                                    "G" -> "Buena Calidad (G) - Basada en censos exhaustivos."
-                                    "M" -> "Moderada (M) - Basada en censos parciales."
-                                    "P" -> "Pobre (Calidad) o Parejas (Unidad) o Presente (Abundancia)"
-                                    "DD" -> "Datos Deficientes (DD) - Sin datos cuantitativos."
-                                    "A" -> "Excelente (A) - Conservación excelente."
-                                    "B" -> "Buena (B) - Buena conservación."
-                                    "C" -> "Media (C) - Conservación media o significativa."
-                                    "D" -> "No significativa (D) - Presencia marginal."
-                                    "I" -> "Individuos (i) - Número de ejemplares."
-                                    "CMALES" -> "Machos cantores (cmales) - Machos detectados territoriales."
-                                    else -> "Código: ${fen.categoria}"
+                                Text("Otros Códigos / Categoría", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                extraCodes.forEach { code ->
+                                    val desc = when (code) {
+                                        "G" -> "Buena Calidad (G) - Basada en censos exhaustivos."
+                                        "M" -> "Moderada (M) - Basada en censos parciales."
+                                        "DD" -> "Datos Deficientes (DD) - Sin datos cuantitativos."
+                                        "A" -> "Excelente (A) - Conservación excelente."
+                                        "B" -> "Buena (B) - Buena conservación."
+                                        "D" -> "No significativa (D) - Presencia marginal."
+                                        "i" -> "Individuos (i) - Número de ejemplares."
+                                        "cmales" -> "Machos cantores (cmales) - Machos detectados territoriales."
+                                        "I" -> "Invernante (I) - [Código alternativo/antiguo]"
+                                        else -> code
+                                    }
+                                    Text("• $desc", fontSize = 14.sp)
                                 }
-                                Text("• $desc", fontSize = 14.sp)
                             }
                         }
                     }
