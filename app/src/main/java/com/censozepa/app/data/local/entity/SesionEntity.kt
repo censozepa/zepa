@@ -11,5 +11,6 @@ data class SesionEntity(
     val fecha_hora_fin: Long?,
     val distancia_recorrida: Double?,
     val track_gps_json: String?,
-    val sincronizado: Boolean = false
+    val sincronizado: Boolean = false, // Google Drive Sync
+    val sincronizado_backend: Boolean = false // CensoZEPABackend Sync
 )

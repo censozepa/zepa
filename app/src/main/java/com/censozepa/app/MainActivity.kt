@@ -17,6 +17,7 @@ import androidx.navigation.toRoute
 import com.censozepa.app.ui.navigation.BirdListScreen
 import com.censozepa.app.ui.navigation.BirdMenuScreen
 import com.censozepa.app.ui.navigation.CcaaListScreen
+import com.censozepa.app.ui.navigation.CensoZepaBackendSyncScreen
 import com.censozepa.app.ui.navigation.FavoritesScreen
 import com.censozepa.app.ui.navigation.GoogleDriveSyncScreen
 import com.censozepa.app.ui.navigation.MainMenuScreen
@@ -30,6 +31,7 @@ import com.censozepa.app.ui.navigation.ZepaSelectorForBirdsScreen
 import com.censozepa.app.ui.screens.BirdListScreenContent
 import com.censozepa.app.ui.screens.BirdMenuScreenContent
 import com.censozepa.app.ui.screens.CcaaListScreenContent
+import com.censozepa.app.ui.screens.CensoZepaBackendSyncScreenContent
 import com.censozepa.app.ui.screens.FavoritesScreenContent
 import com.censozepa.app.ui.screens.GoogleDriveSyncScreenContent
 import com.censozepa.app.ui.screens.MainMenuScreenContent
@@ -186,10 +188,22 @@ fun CensoZepaApp(initialZepaId: String? = null) {
             )
         }
 
+        composable<CensoZepaBackendSyncScreen> {
+            CensoZepaBackendSyncScreenContent(
+                onBack = { navController.popBackStack() },
+                onHome = {
+                    navController.navigate(MainMenuScreen) {
+                        popUpTo<MainMenuScreen> { inclusive = false }
+                    }
+                }
+            )
+        }
+
         composable<SettingsScreen> {
             SettingsScreenContent(
                 onBack = { navController.popBackStack() },
-                onOpenGoogleDriveSync = { navController.navigate(GoogleDriveSyncScreen) }
+                onOpenGoogleDriveSync = { navController.navigate(GoogleDriveSyncScreen) },
+                onOpenCensoZepaBackendSync = { navController.navigate(CensoZepaBackendSyncScreen) }
             )
         }
     }
