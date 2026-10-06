@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.censozepa.app.ui.navigation.AboutScreen
 import com.censozepa.app.ui.navigation.BirdListScreen
 import com.censozepa.app.ui.navigation.BirdMenuScreen
 import com.censozepa.app.ui.navigation.CcaaListScreen
@@ -23,11 +24,14 @@ import com.censozepa.app.ui.navigation.GoogleDriveSyncScreen
 import com.censozepa.app.ui.navigation.MainMenuScreen
 import com.censozepa.app.ui.navigation.NearbyZepasScreen
 import com.censozepa.app.ui.navigation.ObservationsScreen
+import com.censozepa.app.ui.navigation.SettingsMenuScreen
 import com.censozepa.app.ui.navigation.SettingsScreen
+import com.censozepa.app.ui.navigation.SyncOptionsScreen
 import com.censozepa.app.ui.navigation.ZepaBirdsListScreen
 import com.censozepa.app.ui.navigation.ZepaDetailScreen
 import com.censozepa.app.ui.navigation.ZepaListScreen
 import com.censozepa.app.ui.navigation.ZepaSelectorForBirdsScreen
+import com.censozepa.app.ui.screens.AboutScreenContent
 import com.censozepa.app.ui.screens.BirdListScreenContent
 import com.censozepa.app.ui.screens.BirdMenuScreenContent
 import com.censozepa.app.ui.screens.CcaaListScreenContent
@@ -37,7 +41,9 @@ import com.censozepa.app.ui.screens.GoogleDriveSyncScreenContent
 import com.censozepa.app.ui.screens.MainMenuScreenContent
 import com.censozepa.app.ui.screens.NearbyZepasScreenContent
 import com.censozepa.app.ui.screens.ObservationsScreenContent
+import com.censozepa.app.ui.screens.SettingsMenuScreenContent
 import com.censozepa.app.ui.screens.SettingsScreenContent
+import com.censozepa.app.ui.screens.SyncOptionsScreenContent
 import com.censozepa.app.ui.screens.ZepaBirdsListScreenContent
 import com.censozepa.app.ui.screens.ZepaDetailScreenContent
 import com.censozepa.app.ui.screens.ZepaListScreenContent
@@ -83,7 +89,7 @@ fun CensoZepaApp(initialZepaId: String? = null) {
                 onViewFavorites = { navController.navigate(FavoritesScreen) },
                 onViewNearbyZepas = { navController.navigate(NearbyZepasScreen) },
                 onViewBirdList = { navController.navigate(BirdMenuScreen) },
-                onOpenSettings = { navController.navigate(SettingsScreen) }
+                onOpenSettings = { navController.navigate(SettingsMenuScreen) }
             )
         }
 
@@ -196,6 +202,28 @@ fun CensoZepaApp(initialZepaId: String? = null) {
                         popUpTo<MainMenuScreen> { inclusive = false }
                     }
                 }
+            )
+        }
+
+        composable<SettingsMenuScreen> {
+            SettingsMenuScreenContent(
+                onConfig = { navController.navigate(AboutScreen) },
+                onSync = { navController.navigate(SyncOptionsScreen) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<AboutScreen> {
+            AboutScreenContent(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<SyncOptionsScreen> {
+            SyncOptionsScreenContent(
+                onOpenGoogleDriveSync = { navController.navigate(GoogleDriveSyncScreen) },
+                onOpenCensoZepaBackendSync = { navController.navigate(CensoZepaBackendSyncScreen) },
+                onBack = { navController.popBackStack() }
             )
         }
 

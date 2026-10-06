@@ -42,4 +42,13 @@ object GoogleDriveSyncScreen
 object CensoZepaBackendSyncScreen
 
 @Serializable
+object SettingsMenuScreen
+
+@Serializable
+object AboutScreen
+
+@Serializable
+object SyncOptionsScreen
+
+@Serializable
 object SettingsScreen
